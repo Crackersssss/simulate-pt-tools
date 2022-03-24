@@ -1,4 +1,4 @@
-package com.cracker.pt.tablechecksum.data;
+package com.cracker.pt.tablechecksum;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -12,14 +12,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-public class DataSource {
+public class Test {
 
     private static Map<String, HikariConfig> getConfig() {
         Map<String, HikariConfig> configs = new HashMap<>();
@@ -36,28 +34,50 @@ public class DataSource {
         return configs;
     }
 
-    private static Map<String, HikariDataSource> getDataSource() {
+    private static Map<String, HikariDataSource> getDataSource(Map<String, HikariConfig> config) {
         Map<String, HikariDataSource> dataSources = new HashMap<>();
-        getConfig().forEach((k, v) -> dataSources.put(k, new HikariDataSource(v)));
+        config.forEach((k, v) -> dataSources.put(k, new HikariDataSource(v)));
         return dataSources;
     }
 
-    public static Map<String, ResultSet> select() {
-        Map<String, ResultSet> resultSets = new HashMap<>();
-        getDataSource().forEach((k, v) -> {
+    private static Map<String, ResultSet> selectTables(Map<String, HikariDataSource> dataSources) {
+        HashMap<String, ResultSet> resultSets = new HashMap<>();
+        dataSources.forEach((k, v) -> {
             try {
                 Connection connection = v.getConnection();
                 Statement statement = connection.createStatement();
-                String sql = "select * from pt_table;";
+                String sql = "show tables;";
                 resultSets.put(k, statement.executeQuery(sql));
-                if (!v.isClosed()) {
-                    v.close();
-                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         });
         return resultSets;
+    }
+
+    public static Map<String, Map<String, ResultSet>> select(Map<String, HikariDataSource> dataSources, Map<String, List<String>> tables) {
+        Map<String, Map<String, ResultSet>> result = new HashMap<>();
+        dataSources.forEach((k, v) -> {
+            Map<String, ResultSet> resultSets = new HashMap<>();
+            try {
+                tables.get(k).forEach(each -> {
+                    try {
+                        Connection connection = v.getConnection();
+                        Statement statement = connection.createStatement();
+                        String tableName = each.split(":")[1];
+                        String sql = "select * from " + tableName + ";";
+                        resultSets.put(tableName, statement.executeQuery(sql));
+                    }
+                    catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+                result.put(k, resultSets);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return result;
     }
 
     public static Map<String, List<String>> printResultSet(final Map<String, ResultSet> resultSets) {
@@ -78,7 +98,6 @@ public class DataSource {
                         resultValues.add(String.valueOf(resultBuilder));
                     }
                     result.put(k, resultValues);
-                    v.close();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -110,12 +129,13 @@ public class DataSource {
     }
 
     @SuppressWarnings("all")
-    public static boolean isEqual(Map<String, List<String>> results) {
-        Object[] valuesArray = results.values().toArray();
-        List<List<String>> values = Arrays.stream(valuesArray).map(each -> (List<String>)each).collect(Collectors.toList());
-        if (values.get(0).size() != values.get(1).size()) {
+    public static boolean isEqual(List<String> masterResults, List<String> slaveResults) {
+        if (masterResults.size() != slaveResults.size()) {
             return false;
         }
+        List<List<String>> values = new ArrayList<>();
+        values.add(masterResults);
+        values.add(slaveResults);
         StringBuilder md5;
         md5 = values.stream().map(each -> each.stream().reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)),(a , b) -> null))
                 .reduce((a, b) -> new StringBuilder("" + computeMD5(String.valueOf(a)).equals(computeMD5(String.valueOf(b))))).<RuntimeException>orElseThrow(() -> {throw new RuntimeException("未知异常");});
@@ -123,6 +143,35 @@ public class DataSource {
     }
 
     public static void main(String[] args){
-        System.out.println(DataSource.isEqual(DataSource.printResultSet(DataSource.select())));
+        Map<String, HikariConfig> config = Test.getConfig();
+        Map<String, HikariDataSource> dataSource = Test.getDataSource(config);
+        Map<String, ResultSet> pendingTables = Test.selectTables(dataSource);
+        Map<String, List<String>> tables = Test.printResultSet(pendingTables);
+        Map<String, HikariDataSource> dataSource2 = Test.getDataSource(config);
+        Map<String, Map<String, ResultSet>> pendingResultSet = Test.select(dataSource2, tables);
+        Map<String, List<String>> data = new HashMap<>();
+        ArrayList<Boolean> booleans = new ArrayList<>();
+        pendingResultSet.forEach((k, v) -> {
+            Map<String, List<String>> pendingData = Test.printResultSet(v);
+            pendingData.forEach((key, values) -> {
+                values.forEach(System.out::println);
+                if (data.containsKey(key)) {
+                    booleans.add(Test.isEqual(data.get(key), values));
+                } else {
+                    data.put(key, values);
+                }
+            });
+        });
+        booleans.forEach(System.out::println);
+        dataSource.forEach((k, v) -> {
+            if (!v.isClosed()) {
+                v.close();
+            }
+        });
+        dataSource2.forEach((k, v) -> {
+            if (!v.isClosed()) {
+                v.close();
+            }
+        });
     }
 }
