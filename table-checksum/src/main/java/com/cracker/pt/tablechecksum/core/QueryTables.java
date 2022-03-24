@@ -8,14 +8,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class QueryTables {
-
-    private static final String STRING_FORMAT = "{0}:{1}";
+public final class QueryTables extends Query {
 
     private static final String SQL = "show tables;";
 
@@ -23,6 +20,7 @@ public final class QueryTables {
         throw new IllegalStateException("Utility class");
     }
 
+    @SuppressWarnings("all")
     public static List<Table> queryData(final List<DataSource> dataSources) {
         ArrayList<List<Table>> allTables = new ArrayList<>();
         dataSources.forEach(each -> {
@@ -42,10 +40,8 @@ public final class QueryTables {
             tableNames.add(String.valueOf(tableName));
         });
         String tableName = tableNames.stream().reduce((a, b) -> String.valueOf(Compute.computeMD5(a).equals(Compute.computeMD5(b))))
-                .<RuntimeException>orElseThrow(() -> {
-                    throw new RuntimeException("Table name calculation error!");
-                });
-        if ("false".equals(tableName)) {
+                .orElseThrow(() -> new RuntimeException("Table name calculation error!"));
+        if (String.valueOf(Boolean.FALSE).equals(tableName)) {
             throw new RuntimeException("The master and slave database table names or quantities are inconsistent!");
         } else if (String.valueOf(Boolean.TRUE).equals(tableName)) {
             return allTables.get(0);
@@ -60,12 +56,7 @@ public final class QueryTables {
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
                 while (resultSet.next()) {
-                    StringBuilder resultBuilder = new StringBuilder();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        Object values = resultSet.getObject(i);
-                        resultBuilder.append(MessageFormat.format(STRING_FORMAT, columnName, values));
-                    }
+                    StringBuilder resultBuilder = getResult(resultSet, metaData, columnCount);
                     result.add(new Table(String.valueOf(resultBuilder)));
                 }
             } catch (SQLException e) {

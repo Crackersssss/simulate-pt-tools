@@ -51,12 +51,14 @@ public final class Compute {
                 if (columns.get(tableName).size() != v.size()) {
                     result.put(tableName, Boolean.FALSE);
                 } else {
-                    StringBuilder master = columns.get(tableName).stream().reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)), (a, b) -> null);
+                    StringBuilder master = columns.get(tableName).stream()
+                            .reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)), (a, b) -> null);
                     StringBuilder slave = v.stream().reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)), (a, b) -> null);
                     computeResult.add(String.valueOf(master));
                     computeResult.add(String.valueOf(slave));
                 }
-                String opinion = computeResult.stream().map(each -> computeMD5(each).orElseThrow(() -> new RuntimeException("Line MD5 calculation error!")))
+                String opinion = computeResult.stream()
+                        .map(each -> computeMD5(each).orElseThrow(() -> new RuntimeException("Line MD5 calculation error!")))
                         .reduce((a, b) -> String.valueOf(a.equals(b))).orElseThrow(() -> new RuntimeException("Failed to compare MD5 values. Procedure!"));
                 if (String.valueOf(Boolean.TRUE).equals(opinion)) {
                     result.put(tableName, Boolean.TRUE);
