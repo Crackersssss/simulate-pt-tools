@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 public class Test {
 
@@ -26,10 +27,15 @@ public class Test {
         config.setUsername("root");
         config.setPassword("root$123");
         configs.put("resource_0", config);
-        HikariConfig config2 = new HikariConfig();
-        config2.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/pt_db2?useUnicode=true&characterEncoding=utf8&useSSL=false");
-        config2.setUsername("root");
-        config2.setPassword("root$123");
+//        HikariConfig config2 = new HikariConfig();
+//        config2.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/pt_db2?useUnicode=true&characterEncoding=utf8&useSSL=false");
+//        config2.setUsername("root");
+//        config2.setPassword("root$123");
+        Properties properties = new Properties();
+        properties.setProperty("jdbcUrl", "jdbc:mysql://127.0.0.1:3306/pt_db2?useUnicode=true&characterEncoding=utf8&useSSL=false");
+        properties.setProperty("username", "root");
+        properties.setProperty("password", "root$123");
+        HikariConfig config2 = new HikariConfig(properties);
         configs.put("resource_1", config2);
         return configs;
     }
