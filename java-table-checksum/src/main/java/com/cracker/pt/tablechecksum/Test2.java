@@ -15,9 +15,9 @@ import java.util.Properties;
 
 public class Test2 {
 
-    public static void main(java.lang.String[] args) {
+    public static void main(String[] args) {
         Properties properties = new Properties();
-        java.lang.String url = "jdbc:mysql://127.0.0.1:3306/pt_db?useUnicode=true&characterEncoding=utf8&useSSL=false";
+        String url = "jdbc:mysql://127.0.0.1:3306/pt_db?useUnicode=true&characterEncoding=utf8&useSSL=false";
         properties.setProperty(JDBCProps.JDBCURL.getPropName(), url);
         properties.setProperty(JDBCProps.USERNAME.getPropName(), JDBCProps.USERNAME.getDefaultValue());
         properties.setProperty(JDBCProps.PASSWORD.getPropName(), JDBCProps.PASSWORD.getDefaultValue());
@@ -25,7 +25,7 @@ public class Test2 {
         ArrayList<Config> configs = new ArrayList<>();
         configs.add(resource_0);
         Properties properties2 = new Properties();
-        java.lang.String url2 = "jdbc:mysql://127.0.0.1:3306/pt_db2?useUnicode=true&characterEncoding=utf8&useSSL=false";
+        String url2 = "jdbc:mysql://127.0.0.1:3306/pt_db2?useUnicode=true&characterEncoding=utf8&useSSL=false";
         properties2.setProperty(JDBCProps.JDBCURL.getPropName(), url2);
         properties2.setProperty(JDBCProps.USERNAME.getPropName(), JDBCProps.USERNAME.getDefaultValue());
         properties2.setProperty(JDBCProps.PASSWORD.getPropName(), JDBCProps.PASSWORD.getDefaultValue());
