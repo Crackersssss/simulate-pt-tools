@@ -7,12 +7,14 @@
         <groupId>com.cracker</groupId>
         <version>0.0.0</version>
     </parent>
-    <artifactId>table-checksum</artifactId>
-    <version>0.0.0</version>
-    <name>table-checksum</name>
-    <description>table-checksum</description>
+
+    <artifactId>java-table-checksum</artifactId>
+    <name>java-table-checksum</name>
+    <description>java-table-checksum</description>
+
     <properties>
-        <java.version>1.8</java.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
 </project>
