@@ -9,6 +9,7 @@ import com.cracker.pt.onlineschemachange.handler.TableCreateHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDataHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDropHandler;
 import com.cracker.pt.onlineschemachange.handler.TableRenameHandler;
+import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -26,28 +27,46 @@ public class Test {
         return config;
     }
 
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
         Config config = getConfig();
         DataSource dataSource = new DataSource(config);
         String tableName = "pt_ddl";
         String alterType = "add";
         String columnName = "test_columns";
         String columnType = "varchar(20)";
-
-        TableCreateHandler.createTable(dataSource, tableName);
-        String newTableName = TableCreateHandler.getNewTableName();
-        String alterStatement = TableAlterHandler.generateAlterStatement(newTableName, alterType, columnName, columnType, null, null);
-        TableAlterHandler.alterTableStruct(dataSource, alterStatement);
-        //TODO 创建触发器
-        List<String> columns = TableColumnsHandler.getAllColumns(dataSource, tableName);
-        String copyStatement = TableDataHandler.generateCopyStatement(columns, tableName, newTableName);
-        TableDataHandler.copyData(dataSource, copyStatement);
-        String dropStatement = TableDropHandler.generateDropStatement(tableName);
-        TableDropHandler.deleteTable(dataSource, dropStatement);
-        String renameStatement = TableRenameHandler.generateRenameStatement(newTableName, tableName);
-        TableRenameHandler.renameTable(dataSource, renameStatement);
-        if (!dataSource.getHikariDataSource().isClosed()) {
-            dataSource.getHikariDataSource().close();
+        AlterStatement alterStatement = new AlterStatement(tableName, alterType, columnName, columnType);
+        String newTableName;
+        TableCreateHandler createHandler;
+        TableAlterHandler alterHandler;
+        TableDataHandler dataHandler;
+        TableDropHandler dropHandler;
+        TableRenameHandler renameHandler;
+        try {
+            createHandler = new TableCreateHandler(dataSource);
+            createHandler.createTable(alterStatement);
+            newTableName = createHandler.getNewTableName();
+            alterHandler = new TableAlterHandler(dataSource);
+            String alterSQL = alterHandler.generateAlterSQL(alterStatement, newTableName);
+            alterHandler.alterTableStruct(alterSQL);
+            //TODO 创建触发器
+            TableColumnsHandler columnsHandler = new TableColumnsHandler(dataSource);
+            List<String> columns = columnsHandler.getAllColumns(tableName);
+            dataHandler = new TableDataHandler(dataSource);
+            String copySQL = dataHandler.generateCopySQL(columns, tableName, newTableName);
+            dataHandler.copyData(copySQL);
+            dropHandler = new TableDropHandler(dataSource);
+            String dropSQL = dropHandler.generateDropSQL(tableName);
+            dropHandler.deleteTable(dropSQL);
+            renameHandler = new TableRenameHandler(dataSource);
+            String renameSQL = renameHandler.generateRenameSQL(newTableName, tableName);
+            renameHandler.renameTable(renameSQL);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (!dataSource.getHikariDataSource().isClosed()) {
+                dataSource.getHikariDataSource().close();
+            }
         }
+
     }
 }

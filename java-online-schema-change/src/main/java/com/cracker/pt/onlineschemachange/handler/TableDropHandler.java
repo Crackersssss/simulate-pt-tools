@@ -1,26 +1,24 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
-import com.zaxxer.hikari.HikariDataSource;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 
-public class TableDropHandler {
+public class TableDropHandler extends Handler {
 
-    public static String generateDropStatement(final String tableName) {
-        return "drop table " + tableName + ";";
+    private static final String DROP_SQL_HEAD = "drop table ";
+
+    public TableDropHandler(final DataSource dataSource) throws SQLException {
+        super(dataSource);
+        init();
     }
 
-    public static void deleteTable(final DataSource dataSource, final String sql) {
-        try {
-            HikariDataSource hikariDataSource = dataSource.getHikariDataSource();
-            Connection connection = hikariDataSource.getConnection();
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public String generateDropSQL(final String tableName) {
+        return DROP_SQL_HEAD + tableName + END;
+    }
+
+    public void deleteTable(final String sql) throws SQLException {
+        statement.executeUpdate(sql);
+        close();
     }
 }

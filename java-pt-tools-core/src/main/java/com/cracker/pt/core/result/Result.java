@@ -5,7 +5,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
-public class Result {
+public abstract class Result {
 
     private static final String STRING_FORMAT = "{0}:{1}";
 

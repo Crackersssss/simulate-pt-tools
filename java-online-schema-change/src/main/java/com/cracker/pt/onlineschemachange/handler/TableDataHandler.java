@@ -1,33 +1,39 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
-import com.zaxxer.hikari.HikariDataSource;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
-public class TableDataHandler {
+public class TableDataHandler extends Handler {
 
-    public static String generateCopyStatement(final List<String> columns, final String tableName, final String newTableName) {
-        String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        String copyStatement = "insert into " + newTableName + "( " + columnNames + ")";
-        String selectSQL = "select ";
-        selectSQL = selectSQL + columnNames;
-        selectSQL = selectSQL + " from " + tableName;
-        copyStatement = copyStatement + " (" + selectSQL + ");";
-        return copyStatement;
+    private static final String INSERT_SQL_HEAD = "insert into ";
+
+    private static final String SELECT_SQL_HEAD = "select ";
+
+    private static final String FROM = "from";
+
+    private static final String LEFT_BRACKET = "(";
+
+    private static final String RIGHT_BRACKET = ")";
+
+    public TableDataHandler(final DataSource dataSource) throws SQLException {
+        super(dataSource);
+        init();
     }
 
-    public static void copyData(final DataSource dataSource, final String sql) {
-        try {
-            HikariDataSource hikariDataSource = dataSource.getHikariDataSource();
-            Connection connection = hikariDataSource.getConnection();
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public String generateCopySQL(final List<String> columns, final String tableName, final String newTableName) {
+        String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
+        String copySQL = INSERT_SQL_HEAD + newTableName + LEFT_BRACKET + SPACE + columnNames + RIGHT_BRACKET;
+        String selectSQL = SELECT_SQL_HEAD;
+        selectSQL = selectSQL + columnNames;
+        selectSQL = selectSQL + SPACE + FROM + SPACE + tableName;
+        copySQL = copySQL + SPACE + LEFT_BRACKET + selectSQL + RIGHT_BRACKET + END;
+        return copySQL;
+    }
+
+    public void copyData(final String sql) throws SQLException {
+        statement.executeUpdate(sql);
+        close();
     }
 }

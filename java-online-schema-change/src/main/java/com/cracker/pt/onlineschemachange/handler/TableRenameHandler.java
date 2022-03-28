@@ -1,26 +1,25 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
-import com.zaxxer.hikari.HikariDataSource;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 
-public class TableRenameHandler {
+public class TableRenameHandler extends Handler {
 
-    public static String generateRenameStatement(final String newTableName, final String tableName) {
-        return "rename table " + newTableName + " to " + tableName;
+    private static final String RENAME_SQL_HEAD = "rename table ";
+
+    private static final String RENAME_SQL_MIDDLE = " to ";
+
+    public TableRenameHandler(final DataSource dataSource) throws SQLException {
+        super(dataSource);
     }
 
-    public static void renameTable(final DataSource dataSource, final String sql) {
-        try {
-            HikariDataSource hikariDataSource = dataSource.getHikariDataSource();
-            Connection connection = hikariDataSource.getConnection();
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public String generateRenameSQL(final String newTableName, final String tableName) {
+        return RENAME_SQL_HEAD + newTableName + RENAME_SQL_MIDDLE + tableName;
+    }
+
+    public void renameTable(final String sql) throws SQLException {
+        statement.executeUpdate(sql);
+        close();
     }
 }
