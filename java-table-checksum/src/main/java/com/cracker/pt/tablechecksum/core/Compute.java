@@ -59,7 +59,7 @@ public final class Compute {
                 }
                 String opinion = computeResult.stream()
                         .map(each -> computeMD5(each).orElseThrow(() -> new RuntimeException("Line MD5 calculation error!")))
-                        .reduce((a, b) -> String.valueOf(a.equals(b))).orElseThrow(() -> new RuntimeException("Failed to compare MD5 values. Procedure!"));
+                        .reduce((a, b) -> String.valueOf(a.equals(b))).orElse(String.valueOf(Boolean.FALSE));
                 if (String.valueOf(Boolean.TRUE).equals(opinion)) {
                     result.put(tableName, Boolean.TRUE);
                 } else {

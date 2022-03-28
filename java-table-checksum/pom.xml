@@ -12,6 +12,15 @@
     <name>java-table-checksum</name>
     <description>java-table-checksum</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.cracker</groupId>
+            <artifactId>java-pt-tools-core</artifactId>
+            <version>0.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>

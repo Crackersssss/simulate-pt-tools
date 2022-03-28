@@ -1,7 +1,9 @@
-package com.cracker.pt.tablechecksum.core;
+package com.cracker.pt.tablechecksum.query;
 
-import com.cracker.pt.tablechecksum.data.DataSource;
-import com.cracker.pt.tablechecksum.data.Table;
+import com.cracker.pt.core.result.Result;
+import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.core.database.Table;
+import com.cracker.pt.tablechecksum.core.Compute;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -12,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class QueryTables extends Query {
+public final class QueryTables extends Result {
 
     private static final String SQL = "show tables;";
 

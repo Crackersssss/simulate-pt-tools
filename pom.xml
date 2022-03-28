@@ -12,6 +12,7 @@
     <modules>
         <module>java-table-checksum</module>
         <module>java-online-schema-change</module>
+        <module>java-pt-tools-core</module>
     </modules>
 
     <dependencies>

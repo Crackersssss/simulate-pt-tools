@@ -1,19 +1,19 @@
-package com.cracker.pt.tablechecksum.core;
+package com.cracker.pt.core.result;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
-public class Query {
+public class Result {
 
     private static final String STRING_FORMAT = "{0}:{1}";
 
-    Query() {
+    protected Result() {
         throw new IllegalStateException("Utility class");
     }
 
-    static StringBuilder getResult(final ResultSet resultSet, final ResultSetMetaData metaData, final int columnCount) throws SQLException {
+    protected static StringBuilder getResult(final ResultSet resultSet, final ResultSetMetaData metaData, final int columnCount) throws SQLException {
         StringBuilder resultBuilder = new StringBuilder();
         for (int i = 1; i <= columnCount; i++) {
             String columnName = metaData.getColumnName(i);

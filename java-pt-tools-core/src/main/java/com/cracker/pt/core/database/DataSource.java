@@ -1,5 +1,6 @@
-package com.cracker.pt.tablechecksum.data;
+package com.cracker.pt.core.database;
 
+import com.cracker.pt.core.config.Config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
@@ -14,5 +15,10 @@ public final class DataSource {
     public DataSource(final String dataSourceName, final HikariConfig config) {
         this.dataSourceName = dataSourceName;
         this.hikariDataSource = new HikariDataSource(config);
+    }
+
+    public DataSource(final Config config) {
+        this.dataSourceName = config.getDataSourceName();
+        this.hikariDataSource = new HikariDataSource(config.getHikariConfig());
     }
 }

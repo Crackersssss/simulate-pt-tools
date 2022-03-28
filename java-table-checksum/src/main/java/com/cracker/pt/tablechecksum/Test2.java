@@ -1,12 +1,12 @@
 package com.cracker.pt.tablechecksum;
 
-import com.cracker.pt.tablechecksum.config.Config;
-import com.cracker.pt.tablechecksum.config.JDBCProps;
+import com.cracker.pt.core.config.Config;
+import com.cracker.pt.core.config.JDBCProps;
 import com.cracker.pt.tablechecksum.core.Compute;
-import com.cracker.pt.tablechecksum.core.QueryColumns;
-import com.cracker.pt.tablechecksum.core.QueryTables;
-import com.cracker.pt.tablechecksum.data.DataSource;
-import com.cracker.pt.tablechecksum.data.Table;
+import com.cracker.pt.tablechecksum.query.QueryColumns;
+import com.cracker.pt.tablechecksum.query.QueryTables;
+import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.core.database.Table;
 
 import java.util.ArrayList;
 import java.util.List;

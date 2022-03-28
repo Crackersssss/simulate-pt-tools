@@ -1,4 +1,4 @@
-package com.cracker.pt.tablechecksum.config;
+package com.cracker.pt.core.config;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

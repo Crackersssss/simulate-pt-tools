@@ -1,4 +1,4 @@
-package com.cracker.pt.tablechecksum.config;
+package com.cracker.pt.core.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import lombok.Getter;
