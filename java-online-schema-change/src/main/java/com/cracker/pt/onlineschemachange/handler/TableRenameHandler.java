@@ -9,6 +9,10 @@ import java.sql.Statement;
 
 public class TableRenameHandler {
 
+    public static String generateRenameStatement(final String newTableName, final String tableName) {
+        return "rename table " + newTableName + " to " + tableName;
+    }
+
     public static void renameTable(final DataSource dataSource, final String sql) {
         try {
             HikariDataSource hikariDataSource = dataSource.getHikariDataSource();

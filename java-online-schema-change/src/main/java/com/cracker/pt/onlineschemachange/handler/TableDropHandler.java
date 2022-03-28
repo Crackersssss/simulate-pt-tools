@@ -7,7 +7,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class TableDeleteHandler {
+public class TableDropHandler {
+
+    public static String generateDropStatement(final String tableName) {
+        return "drop table " + tableName + ";";
+    }
 
     public static void deleteTable(final DataSource dataSource, final String sql) {
         try {
