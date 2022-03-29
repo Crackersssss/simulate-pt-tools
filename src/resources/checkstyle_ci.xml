@@ -210,7 +210,7 @@
         <module name="TodoComment"/>
         <module name="TrailingComment"/>
         <module name="UncommentedMain">
-            <property name="excludedClasses" value="\.TableChecksumApplication"/>
+            <property name="excludedClasses" value="\.Test"/>
         </module>
         
         <!-- Javadoc Comments -->

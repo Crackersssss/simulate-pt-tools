@@ -18,11 +18,30 @@ public class TableColumnsHandler extends Handler {
 
     public List<String> getAllColumns(final String tableName) throws SQLException {
         List<String> resultSets = new ArrayList<>();
-        ResultSet resultSet = statement.executeQuery(SHOW_COLUMNS_HEAD + tableName + END);
+        ResultSet resultSet = getStatement().executeQuery(SHOW_COLUMNS_HEAD + tableName + END);
         while (resultSet.next()) {
             resultSets.add(String.valueOf(resultSet.getString("Field")));
         }
-        close();
         return resultSets;
+    }
+
+    @Override
+    public void begin() throws SQLException {
+        super.begin();
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        super.commit();
+    }
+
+    @Override
+    public void close() throws SQLException {
+        super.close();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        super.rollback();
     }
 }

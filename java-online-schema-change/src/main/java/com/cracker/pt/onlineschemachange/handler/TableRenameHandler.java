@@ -10,6 +10,8 @@ public class TableRenameHandler extends Handler {
 
     private static final String RENAME_SQL_MIDDLE = " to ";
 
+    private static final String RENAME_OLD_TABLE_END = "_pt_old";
+
     public TableRenameHandler(final DataSource dataSource) throws SQLException {
         super(dataSource);
     }
@@ -19,7 +21,30 @@ public class TableRenameHandler extends Handler {
     }
 
     public void renameTable(final String sql) throws SQLException {
-        statement.executeUpdate(sql);
-        close();
+        getStatement().executeUpdate(sql);
+    }
+
+    public String getRenameOldTableName(final String tableName) {
+        return tableName + RENAME_OLD_TABLE_END;
+    }
+
+    @Override
+    public void begin() throws SQLException {
+        super.begin();
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        super.commit();
+    }
+
+    @Override
+    public void close() throws SQLException {
+        super.close();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        super.rollback();
     }
 }

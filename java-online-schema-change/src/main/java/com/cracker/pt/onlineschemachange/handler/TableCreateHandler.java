@@ -2,7 +2,6 @@ package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
-import lombok.Getter;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,10 +10,11 @@ public class TableCreateHandler extends Handler {
 
     private static final String SHOW_CREATE_TABLE_HEAD = "show create table ";
 
-    @Getter
-    private String newTableName;
+    private static final String BACK_QUOTE = "`";
 
-    private ResultSet resultSet;
+    private static final String RENAME_NEW_TABLE_END = "_pt_new";
+
+    private static final String CREATE_TABLE_SQL_COLUMNS_NAME = "Create Table";
 
     public TableCreateHandler(final DataSource dataSource) throws SQLException {
         super(dataSource);
@@ -23,32 +23,52 @@ public class TableCreateHandler extends Handler {
 
     public void createTable(final AlterStatement alterStatement) throws SQLException {
         String createSQL = generateCreateTableSQL(alterStatement.getTableName());
-        statement.executeUpdate(createSQL);
-        resultSet.close();
-        close();
+        getStatement().executeUpdate(createSQL);
+    }
+
+    public String getNewTableName(final String tableName) {
+        return BACK_QUOTE + tableName + RENAME_NEW_TABLE_END + BACK_QUOTE;
     }
 
     public String generateCreateTableSQL(final String tableName) throws SQLException {
-        showOldCreateTable(tableName);
-        String oldCreateTableSQL = getOldCreateTableSQL();
-        String substring = oldCreateTableSQL.substring(oldCreateTableSQL.indexOf('`'), oldCreateTableSQL.indexOf('`', oldCreateTableSQL.indexOf('`') + 1) + 1);
-        newTableName = "`" + tableName + "_pt_new`";
-        return oldCreateTableSQL.replace(substring, newTableName);
+        ResultSet resultSet = showOldCreateTable(tableName);
+        String oldCreateTableSQL = getOldCreateTableSQL(resultSet);
+        String substring = oldCreateTableSQL.substring(oldCreateTableSQL.indexOf(BACK_QUOTE), oldCreateTableSQL.indexOf(BACK_QUOTE, oldCreateTableSQL.indexOf(BACK_QUOTE) + 1) + 1);
+        return oldCreateTableSQL.replace(substring, getNewTableName(tableName));
     }
 
     public ResultSet showOldCreateTable(final String tableName) throws SQLException {
         String sql = SHOW_CREATE_TABLE_HEAD + tableName + END;
-        resultSet = statement.executeQuery(sql);
-        return resultSet;
+        return getStatement().executeQuery(sql);
     }
 
-    public String getOldCreateTableSQL() throws SQLException {
+    public String getOldCreateTableSQL(final ResultSet resultSet) throws SQLException {
         String result = null;
         if (resultSet != null) {
             while (resultSet.next()) {
-                result = (String) resultSet.getObject("Create Table");
+                result = (String) resultSet.getObject(CREATE_TABLE_SQL_COLUMNS_NAME);
             }
         }
         return result;
+    }
+
+    @Override
+    public void begin() throws SQLException {
+        super.begin();
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        super.commit();
+    }
+
+    @Override
+    public void close() throws SQLException {
+        super.close();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        super.rollback();
     }
 }

@@ -2,6 +2,7 @@ package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.Getter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,11 +16,13 @@ public abstract class Handler {
 
     private final HikariDataSource dataSource;
 
-    protected Connection connection;
+    @Getter
+    private Connection connection;
 
-    protected Statement statement;
+    @Getter
+    private Statement statement;
 
-    protected Handler(DataSource dataSource) throws SQLException {
+    protected Handler(final DataSource dataSource) throws SQLException {
         this.dataSource = dataSource.getHikariDataSource();
         init();
     }
@@ -29,8 +32,20 @@ public abstract class Handler {
         this.statement = connection.createStatement();
     }
 
+    protected void begin() throws SQLException {
+        connection.setAutoCommit(false);
+    }
+
+    protected void commit() throws SQLException {
+        connection.commit();
+    }
+
     protected void close() throws SQLException {
         statement.close();
         connection.close();
+    }
+
+    protected void rollback() throws SQLException {
+        connection.rollback();
     }
 }
