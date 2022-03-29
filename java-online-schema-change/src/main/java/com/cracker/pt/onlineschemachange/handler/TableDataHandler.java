@@ -1,6 +1,7 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
 import com.cracker.pt.onlineschemachange.utils.AlterType;
 
 import java.sql.SQLException;
@@ -41,7 +42,7 @@ public class TableDataHandler extends Handler {
                 copySQL = getCopySQL(oldColumns, newColumns, newTableName, tableName);
                 break;
             default:
-                throw new RuntimeException("Operation " + alterType + " is not supported!");
+                throw new OnlineDDLException("Operation %s is not supported!", alterType);
         }
         return copySQL;
     }

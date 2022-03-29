@@ -51,6 +51,7 @@ public final class Execute {
             } catch (SQLException exception) {
                 exception.printStackTrace();
             }
+            e.printStackTrace();
         } finally {
             try {
                 if (null != dropHandler) {
@@ -82,6 +83,7 @@ public final class Execute {
             } catch (SQLException exception) {
                 exception.printStackTrace();
             }
+            e.printStackTrace();
         } finally {
             try {
                 if (null != renameHandler) {
@@ -111,6 +113,7 @@ public final class Execute {
             } catch (SQLException exception) {
                 exception.printStackTrace();
             }
+            e.printStackTrace();
         } finally {
             try {
                 if (null != dataHandler) {
@@ -138,6 +141,7 @@ public final class Execute {
             } catch (SQLException exception) {
                 exception.printStackTrace();
             }
+            e.printStackTrace();
         } finally {
             try {
                 if (null != alterHandler) {
@@ -166,6 +170,7 @@ public final class Execute {
             } catch (SQLException exception) {
                 exception.printStackTrace();
             }
+            e.printStackTrace();
         } finally {
             try {
                 if (createHandler != null) {

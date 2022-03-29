@@ -11,6 +11,8 @@ public class TableColumnsHandler extends Handler {
 
     private static final String SHOW_COLUMNS_HEAD = "SHOW COLUMNS FROM ";
 
+    private static final String FIELD_COLUMN_NAME = "Field";
+
     public TableColumnsHandler(final DataSource dataSource) throws SQLException {
         super(dataSource);
         init();
@@ -20,7 +22,7 @@ public class TableColumnsHandler extends Handler {
         List<String> resultSets = new ArrayList<>();
         ResultSet resultSet = getStatement().executeQuery(SHOW_COLUMNS_HEAD + tableName + END);
         while (resultSet.next()) {
-            resultSets.add(String.valueOf(resultSet.getString("Field")));
+            resultSets.add(String.valueOf(resultSet.getString(FIELD_COLUMN_NAME)));
         }
         return resultSets;
     }
