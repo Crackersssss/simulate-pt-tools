@@ -19,9 +19,6 @@ public abstract class Handler {
     @Getter
     private Connection connection;
 
-    @Getter
-    private Statement statement;
-
     protected Handler(final DataSource dataSource) throws SQLException {
         this.dataSource = dataSource.getHikariDataSource();
         init();
@@ -29,7 +26,10 @@ public abstract class Handler {
 
     protected void init() throws SQLException {
         this.connection = dataSource.getConnection();
-        this.statement = connection.createStatement();
+    }
+
+    protected Statement getStatement() throws SQLException {
+        return connection.createStatement();
     }
 
     protected void begin() throws SQLException {
@@ -41,7 +41,6 @@ public abstract class Handler {
     }
 
     protected void close() throws SQLException {
-        statement.close();
         connection.close();
     }
 

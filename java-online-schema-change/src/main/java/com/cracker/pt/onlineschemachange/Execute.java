@@ -7,6 +7,7 @@ import com.cracker.pt.onlineschemachange.handler.TableCreateHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDataHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDropHandler;
 import com.cracker.pt.onlineschemachange.handler.TableRenameHandler;
+import com.cracker.pt.onlineschemachange.handler.TableTriggerHandler;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 
 import java.sql.SQLException;
@@ -22,7 +23,7 @@ public final class Execute {
     public void alterTable(final AlterStatement alterStatement) {
         String newTableName = executeCreate(alterStatement);
         executeAlter(alterStatement, newTableName);
-        executeTrigger();
+        //executeTrigger(alterStatement.getTableName(), newTableName);
         executeData(alterStatement, newTableName);
         String renameOldTableName = executeRename(alterStatement, newTableName);
         executeDrop(renameOldTableName);
@@ -31,8 +32,16 @@ public final class Execute {
         }
     }
 
-    public void executeTrigger() {
-        //TODO 创建触发器
+    public void executeTrigger(final String tableName, final String newTableName) {
+        TableColumnsHandler columnsHandler;
+        TableTriggerHandler triggerHandler;
+        try {
+            columnsHandler = new TableColumnsHandler(dataSource);
+            triggerHandler = new TableTriggerHandler(dataSource);
+            triggerHandler.createTrigger(tableName, newTableName, columnsHandler);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void executeDrop(final String renameOldTableName) {

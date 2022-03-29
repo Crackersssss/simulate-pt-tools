@@ -9,8 +9,6 @@ import java.sql.SQLException;
 
 public class TableAlterHandler extends Handler {
 
-    private static final String ALTER_SQL_HEAD = "alter table ";
-
     public TableAlterHandler(final DataSource dataSource) throws SQLException {
         super(dataSource);
         init();
@@ -21,14 +19,13 @@ public class TableAlterHandler extends Handler {
         String alterType = alterStatement.getAlterType();
         switch (AlterType.valueOf(alterType.toUpperCase())) {
             case ADD:
-                alterSQL = ALTER_SQL_HEAD + newTableName + SPACE + alterType + SPACE + alterStatement.getColumnName() + SPACE + alterStatement.getColumnType() + END;
+                alterSQL = String.format("alter table %s %s %s %s;", newTableName, alterType, alterStatement.getColumnName(), alterStatement.getColumnType());
                 break;
             case CHANGE:
-                alterSQL = ALTER_SQL_HEAD + newTableName + SPACE + alterType + SPACE + alterStatement.getColumnName() + SPACE + alterStatement.getNewColumnName() + SPACE
-                        + alterStatement.getColumnType() + END;
+                alterSQL = String.format("alter table %s %s %s %s %s;", newTableName, alterType, alterStatement.getColumnName(), alterStatement.getNewColumnName(), alterStatement.getColumnType());
                 break;
             case DROP:
-                alterSQL = ALTER_SQL_HEAD + newTableName + SPACE + alterType + SPACE + alterStatement.getColumnName() + END;
+                alterSQL = String.format("alter table %s %s %s;", newTableName, alterType, alterStatement.getColumnName());
                 break;
             default:
                 throw new OnlineDDLException("Operation %s is not supported!", alterType);

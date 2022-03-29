@@ -9,8 +9,6 @@ import java.util.List;
 
 public class TableColumnsHandler extends Handler {
 
-    private static final String SHOW_COLUMNS_HEAD = "SHOW COLUMNS FROM ";
-
     private static final String FIELD_COLUMN_NAME = "Field";
 
     public TableColumnsHandler(final DataSource dataSource) throws SQLException {
@@ -20,7 +18,8 @@ public class TableColumnsHandler extends Handler {
 
     public List<String> getAllColumns(final String tableName) throws SQLException {
         List<String> resultSets = new ArrayList<>();
-        ResultSet resultSet = getStatement().executeQuery(SHOW_COLUMNS_HEAD + tableName + END);
+        String sql = String.format("SHOW COLUMNS FROM %s;", tableName);
+        ResultSet resultSet = getStatement().executeQuery(sql);
         while (resultSet.next()) {
             resultSets.add(String.valueOf(resultSet.getString(FIELD_COLUMN_NAME)));
         }

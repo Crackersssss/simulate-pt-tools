@@ -8,8 +8,6 @@ import java.sql.SQLException;
 
 public class TableCreateHandler extends Handler {
 
-    private static final String SHOW_CREATE_TABLE_HEAD = "show create table ";
-
     private static final String BACK_QUOTE = "`";
 
     private static final String RENAME_NEW_TABLE_END = "_pt_new";
@@ -27,18 +25,18 @@ public class TableCreateHandler extends Handler {
     }
 
     public String getNewTableName(final String tableName) {
-        return BACK_QUOTE + tableName + RENAME_NEW_TABLE_END + BACK_QUOTE;
+        return tableName + RENAME_NEW_TABLE_END;
     }
 
     public String generateCreateTableSQL(final String tableName) throws SQLException {
         ResultSet resultSet = showOldCreateTable(tableName);
         String oldCreateTableSQL = getOldCreateTableSQL(resultSet);
         String substring = oldCreateTableSQL.substring(oldCreateTableSQL.indexOf(BACK_QUOTE), oldCreateTableSQL.indexOf(BACK_QUOTE, oldCreateTableSQL.indexOf(BACK_QUOTE) + 1) + 1);
-        return oldCreateTableSQL.replace(substring, getNewTableName(tableName));
+        return oldCreateTableSQL.replace(substring, BACK_QUOTE + getNewTableName(tableName) + BACK_QUOTE);
     }
 
     public ResultSet showOldCreateTable(final String tableName) throws SQLException {
-        String sql = SHOW_CREATE_TABLE_HEAD + tableName + END;
+        String sql = String.format("show create table %s;", tableName);
         return getStatement().executeQuery(sql);
     }
 

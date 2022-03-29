@@ -6,10 +6,6 @@ import java.sql.SQLException;
 
 public class TableRenameHandler extends Handler {
 
-    private static final String RENAME_SQL_HEAD = "rename table ";
-
-    private static final String RENAME_SQL_MIDDLE = " to ";
-
     private static final String RENAME_OLD_TABLE_END = "_pt_old";
 
     public TableRenameHandler(final DataSource dataSource) throws SQLException {
@@ -17,7 +13,7 @@ public class TableRenameHandler extends Handler {
     }
 
     public String generateRenameSQL(final String newTableName, final String tableName) {
-        return RENAME_SQL_HEAD + newTableName + RENAME_SQL_MIDDLE + tableName;
+        return String.format("rename table %s to %s;", newTableName, tableName);
     }
 
     public void renameTable(final String sql) throws SQLException {
