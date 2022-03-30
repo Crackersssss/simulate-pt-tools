@@ -10,10 +10,6 @@ import java.sql.Statement;
 
 public abstract class Handler {
 
-    protected static final String END = ";";
-
-    protected static final String SPACE = " ";
-
     private final HikariDataSource dataSource;
 
     @Getter

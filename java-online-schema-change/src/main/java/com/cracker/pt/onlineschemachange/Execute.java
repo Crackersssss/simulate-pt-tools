@@ -23,7 +23,7 @@ public final class Execute {
     public void alterTable(final AlterStatement alterStatement) {
         String newTableName = executeCreate(alterStatement);
         executeAlter(alterStatement, newTableName);
-        //executeTrigger(alterStatement.getTableName(), newTableName);
+        executeTrigger(alterStatement.getTableName(), newTableName);
         executeData(alterStatement, newTableName);
         String renameOldTableName = executeRename(alterStatement, newTableName);
         executeDrop(renameOldTableName);
@@ -33,14 +33,30 @@ public final class Execute {
     }
 
     public void executeTrigger(final String tableName, final String newTableName) {
-        TableColumnsHandler columnsHandler;
-        TableTriggerHandler triggerHandler;
+        TableTriggerHandler triggerHandler = null;
         try {
-            columnsHandler = new TableColumnsHandler(dataSource);
+            TableColumnsHandler columnsHandler = new TableColumnsHandler(dataSource);
             triggerHandler = new TableTriggerHandler(dataSource);
+            triggerHandler.begin();
             triggerHandler.createTrigger(tableName, newTableName, columnsHandler);
+            triggerHandler.commit();
         } catch (SQLException e) {
+            try {
+                if (null != triggerHandler) {
+                    triggerHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
             e.printStackTrace();
+        } finally {
+            try {
+                if (null != triggerHandler) {
+                    triggerHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
