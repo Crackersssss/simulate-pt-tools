@@ -14,7 +14,7 @@ public class TableDataHandler extends Handler {
         init();
     }
 
-    public String generateCopySQL(final ExecuteContext context) throws SQLException {
+    public String generateCopySQL(final ExecuteContext context) {
         List<String> oldColumns = context.getOldColumns();
         List<String> newColumns = context.getNewColumns();
         String newTableName = context.getNewTableName();

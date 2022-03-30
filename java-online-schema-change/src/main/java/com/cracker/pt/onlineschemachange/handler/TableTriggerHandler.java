@@ -40,7 +40,7 @@ public class TableTriggerHandler extends Handler {
         getStatement().executeUpdate(sql);
     }
 
-    private String getCreateTriggerSQL(final ExecuteContext context, final String primaryKey, final TriggerType execute) throws SQLException {
+    private String getCreateTriggerSQL(final ExecuteContext context, final String primaryKey, final TriggerType execute) {
         List<String> tableColumns = context.getOldColumns();
         List<String> newTableColumns = context.getNewColumns();
         String tableName = context.getAlterStatement().getTableName();
