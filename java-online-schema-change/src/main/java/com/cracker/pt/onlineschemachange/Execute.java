@@ -28,6 +28,7 @@ public final class Execute {
         executeAlter(context);
         executeTrigger(context);
         executeData(context);
+        //TODO There is a risk of deadlocks and leaky data during renaming
         executeRename(context);
         executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {

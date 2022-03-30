@@ -35,7 +35,7 @@ public class TableDataHandler extends Handler {
 
     private String getSubCopySQL(final List<String> columns, final String newTableName, final String selectSQL) {
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        return String.format("insert into %s(%s) (%s);", newTableName, columnNames, selectSQL);
+        return String.format("REPLACE into %s(%s) (%s);", newTableName, columnNames, selectSQL);
     }
 
     public void copyData(final String sql) throws SQLException {
