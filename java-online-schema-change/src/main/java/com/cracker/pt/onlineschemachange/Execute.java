@@ -1,6 +1,7 @@
 package com.cracker.pt.onlineschemachange;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 import com.cracker.pt.onlineschemachange.handler.TableAlterHandler;
 import com.cracker.pt.onlineschemachange.handler.TableColumnsHandler;
 import com.cracker.pt.onlineschemachange.handler.TableCreateHandler;
@@ -21,166 +22,23 @@ public final class Execute {
     }
 
     public void alterTable(final AlterStatement alterStatement) {
-        String newTableName = executeCreate(alterStatement);
-        executeAlter(alterStatement, newTableName);
-        executeTrigger(alterStatement.getTableName(), newTableName);
-        executeData(alterStatement, newTableName);
-        String renameOldTableName = executeRename(alterStatement, newTableName);
-        executeDrop(renameOldTableName);
+        ExecuteContext context = new ExecuteContext();
+        context.setAlterStatement(alterStatement);
+        executeCreate(context);
+        executeAlter(context);
+        executeTrigger(context);
+        executeData(context);
+        executeRename(context);
+        executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {
             dataSource.getHikariDataSource().close();
         }
     }
 
-    public void executeTrigger(final String tableName, final String newTableName) {
-        TableTriggerHandler triggerHandler = null;
-        try {
-            TableColumnsHandler columnsHandler = new TableColumnsHandler(dataSource);
-            triggerHandler = new TableTriggerHandler(dataSource);
-            triggerHandler.begin();
-            triggerHandler.createTrigger(tableName, newTableName, columnsHandler);
-            triggerHandler.commit();
-        } catch (SQLException e) {
-            try {
-                if (null != triggerHandler) {
-                    triggerHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != triggerHandler) {
-                    triggerHandler.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void executeDrop(final String renameOldTableName) {
-        TableDropHandler dropHandler = null;
-        try {
-            dropHandler = new TableDropHandler(dataSource);
-            dropHandler.begin();
-            String dropSQL = dropHandler.generateDropSQL(renameOldTableName);
-            dropHandler.deleteTable(dropSQL);
-            dropHandler.commit();
-        } catch (SQLException e) {
-            try {
-                if (null != dropHandler) {
-                    dropHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != dropHandler) {
-                    dropHandler.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public String executeRename(final AlterStatement alterStatement, final String newTableName) {
-        TableRenameHandler renameHandler = null;
-        String renameOldTableName = null;
-        try {
-            renameHandler = new TableRenameHandler(dataSource);
-            renameHandler.begin();
-            renameOldTableName = renameHandler.getRenameOldTableName(alterStatement.getTableName());
-            String renameOldTableSQL = renameHandler.generateRenameSQL(alterStatement.getTableName(), renameOldTableName);
-            renameHandler.renameTable(renameOldTableSQL);
-            String renameNewTableSQL = renameHandler.generateRenameSQL(newTableName, alterStatement.getTableName());
-            renameHandler.renameTable(renameNewTableSQL);
-            renameHandler.commit();
-        } catch (SQLException e) {
-            try {
-                if (null != renameHandler) {
-                    renameHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != renameHandler) {
-                    renameHandler.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return renameOldTableName;
-    }
-
-    public void executeData(final AlterStatement alterStatement, final String newTableName) {
-        TableColumnsHandler columnsHandler;
-        TableDataHandler dataHandler = null;
-        try {
-            columnsHandler = new TableColumnsHandler(dataSource);
-            dataHandler = new TableDataHandler(dataSource);
-            dataHandler.begin();
-            String copySQL = dataHandler.generateCopySQL(columnsHandler, alterStatement.getAlterType(), alterStatement.getTableName(), newTableName);
-            dataHandler.copyData(copySQL);
-        } catch (SQLException e) {
-            try {
-                if (null != dataHandler) {
-                    dataHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != dataHandler) {
-                    dataHandler.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void executeAlter(final AlterStatement alterStatement, final String newTableName) {
-        TableAlterHandler alterHandler = null;
-        try {
-            alterHandler = new TableAlterHandler(dataSource);
-            alterHandler.begin();
-            String alterSQL = alterHandler.generateAlterSQL(alterStatement, newTableName);
-            alterHandler.alterTableStruct(alterSQL);
-            alterHandler.commit();
-        } catch (SQLException e) {
-            try {
-                if (null != alterHandler) {
-                    alterHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                if (null != alterHandler) {
-                    alterHandler.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public String executeCreate(final AlterStatement alterStatement) {
+    public void executeCreate(final ExecuteContext context) {
         String newTableName = null;
         TableCreateHandler createHandler = null;
+        AlterStatement alterStatement = context.getAlterStatement();
         try {
             createHandler = new TableCreateHandler(dataSource);
             createHandler.begin();
@@ -205,6 +63,154 @@ public final class Execute {
                 exception.printStackTrace();
             }
         }
-        return newTableName;
+        context.setNewTableName(newTableName);
+    }
+
+    public void executeAlter(final ExecuteContext context) {
+        TableAlterHandler alterHandler = null;
+        try {
+            alterHandler = new TableAlterHandler(dataSource);
+            alterHandler.begin();
+            String alterSQL = alterHandler.generateAlterSQL(context);
+            alterHandler.alterTableStruct(alterSQL);
+            alterHandler.commit();
+        } catch (SQLException e) {
+            try {
+                if (null != alterHandler) {
+                    alterHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != alterHandler) {
+                    alterHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void executeTrigger(final ExecuteContext context) {
+        TableColumnsHandler columnsHandler;
+        TableTriggerHandler triggerHandler = null;
+        try {
+            columnsHandler = new TableColumnsHandler(dataSource);
+            triggerHandler = new TableTriggerHandler(dataSource);
+            triggerHandler.begin();
+            triggerHandler.createTrigger(columnsHandler, context);
+            triggerHandler.commit();
+        } catch (SQLException e) {
+            try {
+                if (null != triggerHandler) {
+                    triggerHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != triggerHandler) {
+                    triggerHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void executeData(final ExecuteContext context) {
+        TableDataHandler dataHandler = null;
+        try {
+            dataHandler = new TableDataHandler(dataSource);
+            dataHandler.begin();
+            String copySQL = dataHandler.generateCopySQL(context);
+            dataHandler.copyData(copySQL);
+            dataHandler.commit();
+        } catch (SQLException e) {
+            try {
+                if (null != dataHandler) {
+                    dataHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != dataHandler) {
+                    dataHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void executeRename(final ExecuteContext context) {
+        TableRenameHandler renameHandler = null;
+        String renameOldTableName = null;
+        AlterStatement alterStatement = context.getAlterStatement();
+        try {
+            renameHandler = new TableRenameHandler(dataSource);
+            renameHandler.begin();
+            String tableName = alterStatement.getTableName();
+            renameOldTableName = renameHandler.getRenameOldTableName(tableName);
+            String renameOldTableSQL = renameHandler.generateRenameSQL(tableName, renameOldTableName);
+            renameHandler.renameTable(renameOldTableSQL);
+            String renameNewTableSQL = renameHandler.generateRenameSQL(context.getNewTableName(), tableName);
+            renameHandler.renameTable(renameNewTableSQL);
+            renameHandler.commit();
+        } catch (SQLException e) {
+            try {
+                if (null != renameHandler) {
+                    renameHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != renameHandler) {
+                    renameHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        context.setRenameOldTableName(renameOldTableName);
+    }
+
+    public void executeDrop(final ExecuteContext context) {
+        TableDropHandler dropHandler = null;
+        try {
+            dropHandler = new TableDropHandler(dataSource);
+            dropHandler.begin();
+            String dropSQL = dropHandler.generateDropSQL(context.getRenameOldTableName());
+            dropHandler.deleteTable(dropSQL);
+            dropHandler.commit();
+        } catch (SQLException e) {
+            try {
+                if (null != dropHandler) {
+                    dropHandler.rollback();
+                }
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != dropHandler) {
+                    dropHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

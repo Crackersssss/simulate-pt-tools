@@ -1,6 +1,7 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 import com.cracker.pt.onlineschemachange.utils.AlterType;
@@ -14,9 +15,11 @@ public class TableAlterHandler extends Handler {
         init();
     }
 
-    public String generateAlterSQL(final AlterStatement alterStatement, final String newTableName) {
+    public String generateAlterSQL(final ExecuteContext context) {
         String alterSQL;
+        AlterStatement alterStatement = context.getAlterStatement();
         String alterType = alterStatement.getAlterType();
+        String newTableName = context.getNewTableName();
         switch (AlterType.valueOf(alterType.toUpperCase())) {
             case ADD:
                 alterSQL = String.format("alter table %s %s %s %s;", newTableName, alterType, alterStatement.getColumnName(), alterStatement.getColumnType());

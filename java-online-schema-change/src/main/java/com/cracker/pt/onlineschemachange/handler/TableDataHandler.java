@@ -1,8 +1,8 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
-import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
-import com.cracker.pt.onlineschemachange.utils.AlterType;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
+import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -14,27 +14,13 @@ public class TableDataHandler extends Handler {
         init();
     }
 
-    public String generateCopySQL(final TableColumnsHandler columnsHandler, final String alterType, final String tableName, final String newTableName) throws SQLException {
-        String copySQL;
-        List<String> columns;
-        switch (AlterType.valueOf(alterType.toUpperCase())) {
-            case ADD:
-                columns = columnsHandler.getAllColumns(tableName);
-                copySQL = getCopySQL(columns, columns, newTableName, tableName);
-                break;
-            case DROP:
-                columns = columnsHandler.getAllColumns(newTableName);
-                copySQL = getCopySQL(columns, columns, newTableName, tableName);
-                break;
-            case CHANGE:
-                List<String> oldColumns = columnsHandler.getAllColumns(tableName);
-                List<String> newColumns = columnsHandler.getAllColumns(newTableName);
-                copySQL = getCopySQL(oldColumns, newColumns, newTableName, tableName);
-                break;
-            default:
-                throw new OnlineDDLException("Operation %s is not supported!", alterType);
-        }
-        return copySQL;
+    public String generateCopySQL(final ExecuteContext context) throws SQLException {
+        List<String> oldColumns = context.getOldColumns();
+        List<String> newColumns = context.getNewColumns();
+        String newTableName = context.getNewTableName();
+        AlterStatement alterStatement = context.getAlterStatement();
+        String tableName = alterStatement.getTableName();
+        return getCopySQL(oldColumns, newColumns, newTableName, tableName);
     }
 
     private String getCopySQL(final List<String> oldColumns, final List<String> newColumns, final String newTableName, final String tableName) {

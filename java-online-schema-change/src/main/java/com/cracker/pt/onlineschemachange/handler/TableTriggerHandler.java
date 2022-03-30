@@ -1,10 +1,12 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
+import com.cracker.pt.onlineschemachange.statement.AlterStatement;
+import com.cracker.pt.onlineschemachange.utils.AlterType;
 import com.cracker.pt.onlineschemachange.utils.TriggerType;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -20,27 +22,29 @@ public class TableTriggerHandler extends Handler {
         init();
     }
 
-    public void createTrigger(final String tableName, final String newTableName, final TableColumnsHandler columnsHandler) throws SQLException {
-        DatabaseMetaData metaData = getConnection().getMetaData();
-        ResultSet resultSet = metaData.getPrimaryKeys(null, null, newTableName);
+    public void createTrigger(final TableColumnsHandler columnsHandler, final ExecuteContext context) throws SQLException {
+        ResultSet resultSet = getConnection().getMetaData().getPrimaryKeys(null, null, context.getNewTableName());
         String primaryKey = null;
         while (resultSet.next()) {
             primaryKey = resultSet.getString(COLUMN_NAME);
         }
         if (null == primaryKey) {
-            throw new OnlineDDLException("Table %s has no primary key", tableName);
+            throw new OnlineDDLException("Table %s has no primary key", context.getAlterStatement().getTableName());
         }
-        String sql = getCreateTriggerSQL(tableName, newTableName, primaryKey, TriggerType.DELETE, columnsHandler);
+        getColumns(columnsHandler, context);
+        String sql = getCreateTriggerSQL(context, primaryKey, TriggerType.DELETE);
         getStatement().executeUpdate(sql);
-        sql = getCreateTriggerSQL(tableName, newTableName, primaryKey, TriggerType.UPDATE, columnsHandler);
+        sql = getCreateTriggerSQL(context, primaryKey, TriggerType.UPDATE);
         getStatement().executeUpdate(sql);
-        sql = getCreateTriggerSQL(tableName, newTableName, primaryKey, TriggerType.INSERT, columnsHandler);
+        sql = getCreateTriggerSQL(context, primaryKey, TriggerType.INSERT);
         getStatement().executeUpdate(sql);
     }
 
-    private String getCreateTriggerSQL(final String tableName, final String newTableName, final String primaryKey, final TriggerType execute, final TableColumnsHandler columnsHandler) throws SQLException {
-        List<String> tableColumns;
-        List<String> newTableColumns;
+    private String getCreateTriggerSQL(final ExecuteContext context, final String primaryKey, final TriggerType execute) throws SQLException {
+        List<String> tableColumns = context.getOldColumns();
+        List<String> newTableColumns = context.getNewColumns();
+        String tableName = context.getAlterStatement().getTableName();
+        String newTableName = context.getNewTableName();
         String tableColumnNames;
         String newTableColumnNames;
         String sql;
@@ -50,8 +54,6 @@ public class TableTriggerHandler extends Handler {
                 sql = sql + String.format("delete from %s where %s=old.%s; end", newTableName, primaryKey, primaryKey);
                 break;
             case UPDATE:
-                tableColumns = columnsHandler.getAllColumns(tableName);
-                newTableColumns = columnsHandler.getAllColumns(newTableName);
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 sql = String.format("create trigger trigger_%s_upd after %s on %s for each row begin ", tableName, execute, tableName);
@@ -59,8 +61,6 @@ public class TableTriggerHandler extends Handler {
                 sql = sql + String.format("insert into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, tableColumnNames, newTableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             case INSERT:
-                tableColumns = columnsHandler.getAllColumns(tableName);
-                newTableColumns = columnsHandler.getAllColumns(newTableName);
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 sql = String.format("create trigger trigger_%s_ins after %s on %s for each row begin ", tableName, execute, tableName);
@@ -70,6 +70,34 @@ public class TableTriggerHandler extends Handler {
                 throw new OnlineDDLException("Unable to create trigger of type %s", execute);
         }
         return sql;
+    }
+
+    public void getColumns(final TableColumnsHandler columnsHandler, final ExecuteContext context) throws SQLException {
+        List<String> columns;
+        String newTableName = context.getNewTableName();
+        AlterStatement alterStatement = context.getAlterStatement();
+        String alterType = alterStatement.getAlterType();
+        String tableName = alterStatement.getTableName();
+        switch (AlterType.valueOf(alterType.toUpperCase())) {
+            case ADD:
+                columns = columnsHandler.getAllColumns(tableName);
+                context.setOldColumns(columns);
+                context.setNewColumns(columns);
+                break;
+            case DROP:
+                columns = columnsHandler.getAllColumns(newTableName);
+                context.setOldColumns(columns);
+                context.setNewColumns(columns);
+                break;
+            case CHANGE:
+                List<String> oldColumns = columnsHandler.getAllColumns(tableName);
+                List<String> newColumns = columnsHandler.getAllColumns(newTableName);
+                context.setOldColumns(oldColumns);
+                context.setNewColumns(newColumns);
+                break;
+            default:
+                throw new OnlineDDLException("Operation %s is not supported!", alterType);
+        }
     }
 
     @Override
