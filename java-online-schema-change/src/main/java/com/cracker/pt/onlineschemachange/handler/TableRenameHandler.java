@@ -1,6 +1,7 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 
 import java.sql.SQLException;
 
@@ -20,8 +21,9 @@ public class TableRenameHandler extends Handler {
         getStatement().executeUpdate(sql);
     }
 
-    public String getRenameOldTableName(final String tableName) {
-        return tableName + RENAME_OLD_TABLE_END;
+    public void getRenameOldTableName(final ExecuteContext context) {
+        String tableName = context.getAlterStatement().getTableName();
+        context.setRenameOldTableName(tableName + RENAME_OLD_TABLE_END);
     }
 
     @Override

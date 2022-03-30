@@ -1,6 +1,7 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 
 import java.sql.SQLException;
 
@@ -11,8 +12,8 @@ public class TableDropHandler extends Handler {
         init();
     }
 
-    public String generateDropSQL(final String tableName) {
-        return String.format("drop table %s;", tableName);
+    public String generateDropSQL(final ExecuteContext context) {
+        return String.format("drop table %s;", context.getRenameOldTableName());
     }
 
     public void deleteTable(final String sql) throws SQLException {

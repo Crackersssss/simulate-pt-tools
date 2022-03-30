@@ -1,7 +1,7 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
-import com.cracker.pt.onlineschemachange.statement.AlterStatement;
+import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,20 +19,20 @@ public class TableCreateHandler extends Handler {
         init();
     }
 
-    public void createTable(final AlterStatement alterStatement) throws SQLException {
-        String createSQL = generateCreateTableSQL(alterStatement.getTableName());
+    public void createTable(final ExecuteContext context) throws SQLException {
+        String createSQL = generateCreateTableSQL(context);
         getStatement().executeUpdate(createSQL);
     }
 
-    public String getNewTableName(final String tableName) {
-        return tableName + RENAME_NEW_TABLE_END;
+    public void getNewTableName(final ExecuteContext context) {
+        context.setNewTableName(context.getAlterStatement().getTableName() + RENAME_NEW_TABLE_END);
     }
 
-    public String generateCreateTableSQL(final String tableName) throws SQLException {
-        ResultSet resultSet = showOldCreateTable(tableName);
+    public String generateCreateTableSQL(final ExecuteContext context) throws SQLException {
+        ResultSet resultSet = showOldCreateTable(context.getAlterStatement().getTableName());
         String oldCreateTableSQL = getOldCreateTableSQL(resultSet);
         String substring = oldCreateTableSQL.substring(oldCreateTableSQL.indexOf(BACK_QUOTE), oldCreateTableSQL.indexOf(BACK_QUOTE, oldCreateTableSQL.indexOf(BACK_QUOTE) + 1) + 1);
-        return oldCreateTableSQL.replace(substring, BACK_QUOTE + getNewTableName(tableName) + BACK_QUOTE);
+        return oldCreateTableSQL.replace(substring, BACK_QUOTE + context.getNewTableName() + BACK_QUOTE);
     }
 
     public ResultSet showOldCreateTable(final String tableName) throws SQLException {

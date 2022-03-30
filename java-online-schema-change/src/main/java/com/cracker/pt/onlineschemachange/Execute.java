@@ -36,14 +36,12 @@ public final class Execute {
     }
 
     public void executeCreate(final ExecuteContext context) {
-        String newTableName = null;
         TableCreateHandler createHandler = null;
-        AlterStatement alterStatement = context.getAlterStatement();
         try {
             createHandler = new TableCreateHandler(dataSource);
             createHandler.begin();
-            createHandler.createTable(alterStatement);
-            newTableName = createHandler.getNewTableName(alterStatement.getTableName());
+            createHandler.getNewTableName(context);
+            createHandler.createTable(context);
             createHandler.commit();
         } catch (SQLException e) {
             try {
@@ -63,7 +61,6 @@ public final class Execute {
                 exception.printStackTrace();
             }
         }
-        context.setNewTableName(newTableName);
     }
 
     public void executeAlter(final ExecuteContext context) {
@@ -153,14 +150,12 @@ public final class Execute {
 
     public void executeRename(final ExecuteContext context) {
         TableRenameHandler renameHandler = null;
-        String renameOldTableName = null;
-        AlterStatement alterStatement = context.getAlterStatement();
         try {
             renameHandler = new TableRenameHandler(dataSource);
             renameHandler.begin();
-            String tableName = alterStatement.getTableName();
-            renameOldTableName = renameHandler.getRenameOldTableName(tableName);
-            String renameOldTableSQL = renameHandler.generateRenameSQL(tableName, renameOldTableName);
+            renameHandler.getRenameOldTableName(context);
+            String tableName = context.getAlterStatement().getTableName();
+            String renameOldTableSQL = renameHandler.generateRenameSQL(tableName, context.getRenameOldTableName());
             renameHandler.renameTable(renameOldTableSQL);
             String renameNewTableSQL = renameHandler.generateRenameSQL(context.getNewTableName(), tableName);
             renameHandler.renameTable(renameNewTableSQL);
@@ -183,7 +178,6 @@ public final class Execute {
                 e.printStackTrace();
             }
         }
-        context.setRenameOldTableName(renameOldTableName);
     }
 
     public void executeDrop(final ExecuteContext context) {
@@ -191,7 +185,7 @@ public final class Execute {
         try {
             dropHandler = new TableDropHandler(dataSource);
             dropHandler.begin();
-            String dropSQL = dropHandler.generateDropSQL(context.getRenameOldTableName());
+            String dropSQL = dropHandler.generateDropSQL(context);
             dropHandler.deleteTable(dropSQL);
             dropHandler.commit();
         } catch (SQLException e) {
