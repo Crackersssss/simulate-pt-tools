@@ -155,11 +155,8 @@ public final class Execute {
             renameHandler = new TableRenameHandler(dataSource);
             renameHandler.begin();
             renameHandler.getRenameOldTableName(context);
-            String tableName = context.getAlterStatement().getTableName();
-            String renameOldTableSQL = renameHandler.generateRenameSQL(tableName, context.getRenameOldTableName());
-            renameHandler.renameTable(renameOldTableSQL);
-            String renameNewTableSQL = renameHandler.generateRenameSQL(context.getNewTableName(), tableName);
-            renameHandler.renameTable(renameNewTableSQL);
+            String renameSQL = renameHandler.generateRenameSQL(context);
+            renameHandler.renameTable(renameSQL);
             renameHandler.commit();
         } catch (SQLException e) {
             try {

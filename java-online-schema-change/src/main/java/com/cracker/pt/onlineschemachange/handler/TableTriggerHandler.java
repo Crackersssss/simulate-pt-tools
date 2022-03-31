@@ -58,13 +58,13 @@ public class TableTriggerHandler extends Handler {
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 sql = String.format("create trigger trigger_%s_upd after %s on %s for each row begin ", tableName, execute, tableName);
                 sql = sql + String.format("delete from %s where %s=old.%s;", newTableName, primaryKey, primaryKey);
-                sql = sql + String.format("insert into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
+                sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             case INSERT:
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 sql = String.format("create trigger trigger_%s_ins after %s on %s for each row begin ", tableName, execute, tableName);
-                sql = sql + String.format("insert into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
+                sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             default:
                 throw new OnlineDDLException("Unable to create trigger of type %s", execute);

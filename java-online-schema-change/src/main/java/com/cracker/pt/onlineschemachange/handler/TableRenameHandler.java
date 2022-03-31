@@ -17,6 +17,11 @@ public class TableRenameHandler extends Handler {
         return String.format("rename table %s to %s;", newTableName, tableName);
     }
 
+    public String generateRenameSQL(final ExecuteContext context) {
+        String tableName = context.getAlterStatement().getTableName();
+        return String.format("rename table %s to %s, %s to %s;", tableName, context.getRenameOldTableName(), context.getNewTableName(), tableName);
+    }
+
     public void renameTable(final String sql) throws SQLException {
         getStatement().executeUpdate(sql);
     }
