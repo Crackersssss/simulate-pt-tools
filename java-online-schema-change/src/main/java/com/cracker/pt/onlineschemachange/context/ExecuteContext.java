@@ -22,4 +22,14 @@ public final class ExecuteContext {
     private String newTableName;
 
     private String renameOldTableName;
+
+    private String primaryKey;
+
+    private String copyMinIndex;
+
+    private String copyMaxIndex;
+
+    private String copyStartIndex;
+
+    private String copyEndIndex;
 }

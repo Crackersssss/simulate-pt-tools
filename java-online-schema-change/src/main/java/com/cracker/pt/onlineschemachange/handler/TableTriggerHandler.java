@@ -31,6 +31,7 @@ public class TableTriggerHandler extends Handler {
         if (null == primaryKey) {
             throw new OnlineDDLException("Table %s has no primary key", context.getAlterStatement().getTableName());
         }
+        context.setPrimaryKey(primaryKey);
         getColumns(columnsHandler, context);
         String sql = getCreateTriggerSQL(context, primaryKey, TriggerType.DELETE);
         getStatement().executeUpdate(sql);

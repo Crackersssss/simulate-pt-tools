@@ -8,6 +8,7 @@ import com.cracker.pt.onlineschemachange.handler.TableCreateHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDataHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDropHandler;
 import com.cracker.pt.onlineschemachange.handler.TableRenameHandler;
+import com.cracker.pt.onlineschemachange.handler.TableSelectHandler;
 import com.cracker.pt.onlineschemachange.handler.TableTriggerHandler;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 
@@ -28,7 +29,7 @@ public final class Execute {
         executeAlter(context);
         executeTrigger(context);
         executeData(context);
-        //TODO There is a risk of deadlocks and leaky data during renaming
+        //TODO There is a risk of deadlocks during renaming
         executeRename(context);
         executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {
@@ -123,11 +124,26 @@ public final class Execute {
 
     public void executeData(final ExecuteContext context) {
         TableDataHandler dataHandler = null;
+        TableSelectHandler selectHandler;
         try {
+            selectHandler = new TableSelectHandler(dataSource);
             dataHandler = new TableDataHandler(dataSource);
+            selectHandler.setConnection(dataHandler.getConnection());
             dataHandler.begin();
-            String copySQL = dataHandler.generateCopySQL(context);
-            dataHandler.copyData(copySQL);
+            selectHandler.setCopyMinIndex(context);
+            selectHandler.setCopyMaxIndex(context);
+            context.setCopyStartIndex(context.getCopyMinIndex());
+            selectHandler.setCopyEndIndex(context);
+            while (true) {
+                String copySQL = dataHandler.generateCopySQL(context);
+                dataHandler.copyData(copySQL);
+                selectHandler.setCopyMaxIndex(context);
+                if (context.getCopyEndIndex().equals(context.getCopyMaxIndex())) {
+                    break;
+                }
+                selectHandler.setCopyStartIndex(context);
+                selectHandler.setCopyEndIndex(context);
+            }
             dataHandler.commit();
         } catch (SQLException e) {
             try {

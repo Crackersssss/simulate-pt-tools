@@ -3,6 +3,7 @@ package com.cracker.pt.onlineschemachange.handler;
 import com.cracker.pt.core.database.DataSource;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,6 +14,7 @@ public abstract class Handler {
     private final HikariDataSource dataSource;
 
     @Getter
+    @Setter
     private Connection connection;
 
     protected Handler(final DataSource dataSource) throws SQLException {

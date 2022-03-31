@@ -2,7 +2,6 @@ package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
 import com.cracker.pt.onlineschemachange.context.ExecuteContext;
-import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -17,23 +16,26 @@ public class TableDataHandler extends Handler {
     public String generateCopySQL(final ExecuteContext context) {
         List<String> oldColumns = context.getOldColumns();
         List<String> newColumns = context.getNewColumns();
-        String newTableName = context.getNewTableName();
-        AlterStatement alterStatement = context.getAlterStatement();
-        String tableName = alterStatement.getTableName();
-        return getCopySQL(oldColumns, newColumns, newTableName, tableName);
+        return getCopySQL(oldColumns, newColumns, context);
     }
 
-    private String getCopySQL(final List<String> oldColumns, final List<String> newColumns, final String newTableName, final String tableName) {
-        String selectSQL = getSelectSQL(oldColumns, tableName);
-        return getSubCopySQL(newColumns, newTableName, selectSQL);
+    private String getCopySQL(final List<String> oldColumns, final List<String> newColumns, final ExecuteContext context) {
+        String selectSQL = getSelectSQL(oldColumns, context);
+        return getSubCopySQL(newColumns, selectSQL, context);
     }
 
-    private String getSelectSQL(final List<String> columns, final String tableName) {
+    private String getSelectSQL(final List<String> columns, final ExecuteContext context) {
+        String tableName = context.getAlterStatement().getTableName();
+        String primaryKey = context.getPrimaryKey();
+        String copyStartIndex = context.getCopyStartIndex();
+        String copyEndIndex = context.getCopyEndIndex();
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        return String.format("select %s from %s", columnNames, tableName);
+        return String.format("select %s from %s where %s >= %s and %s <= %s",
+                columnNames, tableName, primaryKey, copyStartIndex, primaryKey, copyEndIndex);
     }
 
-    private String getSubCopySQL(final List<String> columns, final String newTableName, final String selectSQL) {
+    private String getSubCopySQL(final List<String> columns, final String selectSQL, final ExecuteContext context) {
+        String newTableName = context.getNewTableName();
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
         return String.format("REPLACE into %s(%s) (%s);", newTableName, columnNames, selectSQL);
     }

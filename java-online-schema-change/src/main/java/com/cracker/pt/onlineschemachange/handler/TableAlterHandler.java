@@ -36,8 +36,8 @@ public class TableAlterHandler extends Handler {
         return alterSQL;
     }
 
-    public void alterTableStruct(final String alterStatement) throws SQLException {
-        getStatement().executeUpdate(alterStatement);
+    public void alterTableStruct(final String alterSQL) throws SQLException {
+        getStatement().executeUpdate(alterSQL);
     }
 
     @Override
