@@ -32,4 +32,6 @@ public final class ExecuteContext {
     private String copyStartIndex;
 
     private String copyEndIndex;
+
+    private boolean isEnd;
 }

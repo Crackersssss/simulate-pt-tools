@@ -29,7 +29,7 @@ public final class Execute {
         executeAlter(context);
         executeTrigger(context);
         executeData(context);
-        //TODO There is a risk of deadlocks during renaming
+        //TODO Perform a data consistency check
         executeRename(context);
         executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {
@@ -128,31 +128,30 @@ public final class Execute {
         try {
             selectHandler = new TableSelectHandler(dataSource);
             dataHandler = new TableDataHandler(dataSource);
-            selectHandler.setConnection(dataHandler.getConnection());
-            dataHandler.begin();
             selectHandler.setCopyMinIndex(context);
             selectHandler.setCopyMaxIndex(context);
             context.setCopyStartIndex(context.getCopyMinIndex());
             selectHandler.setCopyEndIndex(context);
             while (true) {
+                //dataHandler.begin();
                 String copySQL = dataHandler.generateCopySQL(context);
                 dataHandler.copyData(copySQL);
-                selectHandler.setCopyMaxIndex(context);
-                if (context.getCopyEndIndex().equals(context.getCopyMaxIndex())) {
+                if (context.isEnd()) {
                     break;
                 }
                 selectHandler.setCopyStartIndex(context);
                 selectHandler.setCopyEndIndex(context);
+                //dataHandler.commit();
             }
-            dataHandler.commit();
+            //dataHandler.commit();
         } catch (SQLException e) {
-            try {
-                if (null != dataHandler) {
-                    dataHandler.rollback();
-                }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
-            }
+//            try {
+//                if (null != dataHandler) {
+//                    dataHandler.rollback();
+//                }
+//            } catch (SQLException exception) {
+//                exception.printStackTrace();
+//            }
             e.printStackTrace();
         } finally {
             try {
