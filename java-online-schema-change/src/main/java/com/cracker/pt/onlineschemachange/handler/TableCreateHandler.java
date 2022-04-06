@@ -6,6 +6,9 @@ import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Table create operating handler.
+ */
 public class TableCreateHandler extends Handler {
 
     private static final String BACK_QUOTE = "`";

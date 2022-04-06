@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Table columns operating handler.
+ */
 public class TableColumnsHandler extends Handler {
 
     private static final String FIELD_COLUMN_NAME = "Field";

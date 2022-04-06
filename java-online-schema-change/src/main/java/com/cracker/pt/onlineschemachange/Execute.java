@@ -17,6 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 
+/**
+ * Online DDL Executor.
+ */
 @Slf4j
 public final class Execute {
 
@@ -137,7 +140,6 @@ public final class Execute {
             context.setCopyStartIndex(context.getCopyMinIndex());
             selectHandler.setCopyEndIndex(context);
             while (true) {
-                //dataHandler.begin();
                 String copySQL = dataHandler.generateCopySQL(context);
                 dataHandler.copyData(copySQL);
                 if (context.isEnd()) {
@@ -145,17 +147,8 @@ public final class Execute {
                 }
                 selectHandler.setCopyStartIndex(context);
                 selectHandler.setCopyEndIndex(context);
-                //dataHandler.commit();
             }
-            //dataHandler.commit();
         } catch (SQLException e) {
-//            try {
-//                if (null != dataHandler) {
-//                    dataHandler.rollback();
-//                }
-//            } catch (SQLException exception) {
-//                exception.printStackTrace();
-//            }
             e.printStackTrace();
         } finally {
             try {

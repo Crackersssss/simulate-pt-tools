@@ -5,6 +5,9 @@ import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 
 import java.sql.SQLException;
 
+/**
+ * Table drop operating handler.
+ */
 public class TableDropHandler extends Handler {
 
     public TableDropHandler(final DataSource dataSource) throws SQLException {

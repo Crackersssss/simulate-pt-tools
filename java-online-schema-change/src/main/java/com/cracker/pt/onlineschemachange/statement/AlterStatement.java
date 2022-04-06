@@ -3,6 +3,9 @@ package com.cracker.pt.onlineschemachange.statement;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Alter statement.
+ */
 @RequiredArgsConstructor
 @Getter
 public class AlterStatement {

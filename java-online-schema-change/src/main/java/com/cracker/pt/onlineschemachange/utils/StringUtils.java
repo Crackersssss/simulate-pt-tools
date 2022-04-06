@@ -3,6 +3,9 @@ package com.cracker.pt.onlineschemachange.utils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+/**
+ * String utils.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StringUtils {
 

@@ -8,6 +8,9 @@ import com.cracker.pt.onlineschemachange.utils.AlterType;
 
 import java.sql.SQLException;
 
+/**
+ * Table alter operating handler.
+ */
 public class TableAlterHandler extends Handler {
 
     public TableAlterHandler(final DataSource dataSource) throws SQLException {

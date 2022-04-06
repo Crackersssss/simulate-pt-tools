@@ -13,10 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Table result set operating handler.
+ */
 @Slf4j
 public class TableResultSetHandler extends Handler {
-
-    private static final String STRING_FORMAT = "{0}:{1}";
 
     private static final String MD5 = "MD5";
 
@@ -88,7 +89,7 @@ public class TableResultSetHandler extends Handler {
 
     private boolean isEqual(final List<String> oldTableResultSet, final List<String> newTableResultSet) {
         if (oldTableResultSet.size() != newTableResultSet.size()) {
-            log.info("size inconsistency!");
+            log.error("size inconsistency!");
             return false;
         }
         List<String> computeResult = new ArrayList<>();

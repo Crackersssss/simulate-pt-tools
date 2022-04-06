@@ -8,6 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
+/**
+ * Table select operating handler.
+ */
 public class TableSelectHandler extends Handler {
 
     public TableSelectHandler(final DataSource dataSource) throws SQLException {
@@ -58,7 +61,6 @@ public class TableSelectHandler extends Handler {
                 + "ORDER BY %s DESC LIMIT 1",
                 primaryKey, primaryKey, tableName, primaryKey, copyStartIndex, primaryKey, copyMaxIndex, primaryKey, copyBlockSize, primaryKey);
         context.setCopyEndIndex(selectIndex(sql, context, "0"));
-//        System.out.println("start: " + copyStartIndex + ";" + "end: " + context.getCopyEndIndex() + ";" + "max: " + context.getCopyMaxIndex());
         if (StringUtils.compareTo(copyStartIndex, context.getCopyEndIndex()) >= 0) {
             context.setEnd(Boolean.TRUE);
         }

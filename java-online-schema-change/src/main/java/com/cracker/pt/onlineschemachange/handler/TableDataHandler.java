@@ -6,6 +6,9 @@ import com.cracker.pt.onlineschemachange.context.ExecuteContext;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Table data operating handler.
+ */
 public class TableDataHandler extends Handler {
 
     public TableDataHandler(final DataSource dataSource) throws SQLException {

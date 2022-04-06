@@ -9,6 +9,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * Operating handler.
+ */
 public abstract class Handler {
 
     private final HikariDataSource dataSource;
@@ -17,7 +20,7 @@ public abstract class Handler {
     @Setter
     private Connection connection;
 
-    protected Handler(final DataSource dataSource) throws SQLException {
+    protected Handler(final DataSource dataSource) {
         this.dataSource = dataSource.getHikariDataSource();
     }
 

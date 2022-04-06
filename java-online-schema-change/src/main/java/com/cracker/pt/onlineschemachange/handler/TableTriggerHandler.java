@@ -11,6 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Table trigger operating handler.
+ */
 public class TableTriggerHandler extends Handler {
 
     private static final String COLUMN_NAME = "COLUMN_NAME";
@@ -54,16 +57,14 @@ public class TableTriggerHandler extends Handler {
             case DELETE:
                 triggerName = String.format("trigger_%s_del", tableName);
                 context.setDeleteTrigger(triggerName);
-                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
-                sql = sql + String.format("delete from %s where %s=old.%s; end", newTableName, primaryKey, primaryKey);
+                sql = getSQLHead(triggerName, execute, tableName) + String.format("delete from %s where %s=old.%s; end", newTableName, primaryKey, primaryKey);
                 break;
             case UPDATE:
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 triggerName = String.format("trigger_%s_upd", tableName);
                 context.setUpdateTrigger(triggerName);
-                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
-                sql = sql + String.format("delete from %s where %s=old.%s;", newTableName, primaryKey, primaryKey);
+                sql = getSQLHead(triggerName, execute, tableName) + String.format("delete from %s where %s=old.%s;", newTableName, primaryKey, primaryKey);
                 sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             case INSERT:
@@ -71,13 +72,17 @@ public class TableTriggerHandler extends Handler {
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 triggerName = String.format("trigger_%s_ins", tableName);
                 context.setInsertTrigger(triggerName);
-                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
-                sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
+                sql = getSQLHead(triggerName, execute, tableName)
+                        + String.format("REPLACE into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             default:
                 throw new OnlineDDLException("Unable to create trigger of type %s", execute);
         }
         return sql;
+    }
+
+    private String getSQLHead(final String triggerName, final TriggerType execute, final String tableName) {
+        return String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
     }
 
     public void getColumns(final TableColumnsHandler columnsHandler, final ExecuteContext context) throws SQLException {
