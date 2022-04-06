@@ -1,4 +1,4 @@
-package com.cracker.pt.core.result;
+package com.cracker.pt.tablechecksum.query;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

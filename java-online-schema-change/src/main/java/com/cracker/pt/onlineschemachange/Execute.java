@@ -2,18 +2,22 @@ package com.cracker.pt.onlineschemachange;
 
 import com.cracker.pt.core.database.DataSource;
 import com.cracker.pt.onlineschemachange.context.ExecuteContext;
+import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
 import com.cracker.pt.onlineschemachange.handler.TableAlterHandler;
 import com.cracker.pt.onlineschemachange.handler.TableColumnsHandler;
 import com.cracker.pt.onlineschemachange.handler.TableCreateHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDataHandler;
 import com.cracker.pt.onlineschemachange.handler.TableDropHandler;
 import com.cracker.pt.onlineschemachange.handler.TableRenameHandler;
+import com.cracker.pt.onlineschemachange.handler.TableResultSetHandler;
 import com.cracker.pt.onlineschemachange.handler.TableSelectHandler;
 import com.cracker.pt.onlineschemachange.handler.TableTriggerHandler;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 
+@Slf4j
 public final class Execute {
 
     private final DataSource dataSource;
@@ -28,8 +32,8 @@ public final class Execute {
         executeCreate(context);
         executeAlter(context);
         executeTrigger(context);
-        executeData(context);
-        //TODO Perform a data consistency check
+        executeDataCopy(context);
+        executeResultSet(context);
         executeRename(context);
         executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {
@@ -122,7 +126,7 @@ public final class Execute {
         }
     }
 
-    public void executeData(final ExecuteContext context) {
+    public void executeDataCopy(final ExecuteContext context) {
         TableDataHandler dataHandler = null;
         TableSelectHandler selectHandler;
         try {
@@ -157,6 +161,44 @@ public final class Execute {
             try {
                 if (null != dataHandler) {
                     dataHandler.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void executeResultSet(final ExecuteContext context) {
+        TableResultSetHandler resultSetHandler = null;
+        TableDropHandler dropHandler = null;
+        TableTriggerHandler triggerHandler = null;
+        try {
+            resultSetHandler = new TableResultSetHandler(dataSource);
+            resultSetHandler.begin();
+            boolean comparison = resultSetHandler.resultSetComparison(context);
+            if (!comparison) {
+                dropHandler = new TableDropHandler(dataSource);
+                String dropRecoverSQL = dropHandler.generateDropRecoverSQL(context);
+                dropHandler.deleteTable(dropRecoverSQL);
+                triggerHandler = new TableTriggerHandler(dataSource);
+                triggerHandler.dropAllTrigger(context);
+                resultSetHandler.commit();
+                throw new OnlineDDLException("If the result set is inconsistent, perform the operation again!");
+            }
+            log.info("Consistent result set.");
+            resultSetHandler.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (null != resultSetHandler) {
+                    resultSetHandler.close();
+                }
+                if (null != dropHandler) {
+                    dropHandler.close();
+                }
+                if (null != triggerHandler) {
+                    triggerHandler.close();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();

@@ -1,6 +1,5 @@
 package com.cracker.pt.tablechecksum.query;
 
-import com.cracker.pt.core.result.Result;
 import com.cracker.pt.core.database.DataSource;
 import com.cracker.pt.core.database.Table;
 

@@ -16,6 +16,10 @@ public class TableDropHandler extends Handler {
         return String.format("drop table %s;", context.getRenameOldTableName());
     }
 
+    public String generateDropRecoverSQL(final ExecuteContext context) {
+        return String.format("drop table %s;", context.getNewTableName());
+    }
+
     public void deleteTable(final String sql) throws SQLException {
         getStatement().executeUpdate(sql);
     }

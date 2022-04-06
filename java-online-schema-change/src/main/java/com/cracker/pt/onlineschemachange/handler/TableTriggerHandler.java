@@ -49,22 +49,29 @@ public class TableTriggerHandler extends Handler {
         String tableColumnNames;
         String newTableColumnNames;
         String sql;
+        String triggerName;
         switch (execute) {
             case DELETE:
-                sql = String.format("create trigger trigger_%s_del after %s on %s for each row begin ", tableName, execute, tableName);
+                triggerName = String.format("trigger_%s_del", tableName);
+                context.setDeleteTrigger(triggerName);
+                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
                 sql = sql + String.format("delete from %s where %s=old.%s; end", newTableName, primaryKey, primaryKey);
                 break;
             case UPDATE:
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                sql = String.format("create trigger trigger_%s_upd after %s on %s for each row begin ", tableName, execute, tableName);
+                triggerName = String.format("trigger_%s_upd", tableName);
+                context.setUpdateTrigger(triggerName);
+                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
                 sql = sql + String.format("delete from %s where %s=old.%s;", newTableName, primaryKey, primaryKey);
                 sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             case INSERT:
                 tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
                 newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                sql = String.format("create trigger trigger_%s_ins after %s on %s for each row begin ", tableName, execute, tableName);
+                triggerName = String.format("trigger_%s_ins", tableName);
+                context.setInsertTrigger(triggerName);
+                sql = String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
                 sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
                 break;
             default:
@@ -99,6 +106,11 @@ public class TableTriggerHandler extends Handler {
             default:
                 throw new OnlineDDLException("Operation %s is not supported!", alterType);
         }
+    }
+
+    public void dropAllTrigger(final ExecuteContext context) throws SQLException {
+        String sql = String.format("drop trigger %s, %s, %s;", context.getDeleteTrigger(), context.getUpdateTrigger(), context.getInsertTrigger());
+        getStatement().executeUpdate(sql);
     }
 
     @Override

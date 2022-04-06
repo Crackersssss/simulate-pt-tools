@@ -19,7 +19,6 @@ public abstract class Handler {
 
     protected Handler(final DataSource dataSource) throws SQLException {
         this.dataSource = dataSource.getHikariDataSource();
-        init();
     }
 
     protected void init() throws SQLException {

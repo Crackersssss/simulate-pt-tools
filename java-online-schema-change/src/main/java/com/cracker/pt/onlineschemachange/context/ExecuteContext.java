@@ -33,5 +33,11 @@ public final class ExecuteContext {
 
     private String copyEndIndex;
 
+    private String deleteTrigger;
+
+    private String updateTrigger;
+
+    private String insertTrigger;
+
     private boolean isEnd;
 }
