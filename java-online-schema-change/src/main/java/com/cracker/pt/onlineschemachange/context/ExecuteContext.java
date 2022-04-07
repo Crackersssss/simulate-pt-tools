@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,6 +36,10 @@ public final class ExecuteContext {
     private String copyStartIndex;
 
     private String copyEndIndex;
+
+    private List<String> resultSetStartIndex = new ArrayList<>();
+
+    private List<String> resultSetEndIndex = new ArrayList<>();
 
     private String deleteTrigger;
 

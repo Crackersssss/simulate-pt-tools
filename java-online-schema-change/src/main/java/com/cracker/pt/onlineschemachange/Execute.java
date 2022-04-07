@@ -139,6 +139,8 @@ public final class Execute {
             selectHandler.setCopyMaxIndex(context);
             context.setCopyStartIndex(context.getCopyMinIndex());
             selectHandler.setCopyEndIndex(context);
+            context.getResultSetStartIndex().add(context.getCopyStartIndex());
+            context.getResultSetEndIndex().add(context.getCopyEndIndex());
             while (true) {
                 String copySQL = dataHandler.generateCopySQL(context);
                 dataHandler.copyData(copySQL);
@@ -147,6 +149,8 @@ public final class Execute {
                 }
                 selectHandler.setCopyStartIndex(context);
                 selectHandler.setCopyEndIndex(context);
+                context.getResultSetStartIndex().add(context.getCopyStartIndex());
+                context.getResultSetEndIndex().add(context.getCopyEndIndex());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -168,6 +172,7 @@ public final class Execute {
         try {
             resultSetHandler = new TableResultSetHandler(dataSource);
             resultSetHandler.begin();
+            resultSetHandler.resultSetComparison(context);
             boolean comparison = resultSetHandler.resultSetComparison(context);
             if (!comparison) {
                 dropHandler = new TableDropHandler(dataSource);

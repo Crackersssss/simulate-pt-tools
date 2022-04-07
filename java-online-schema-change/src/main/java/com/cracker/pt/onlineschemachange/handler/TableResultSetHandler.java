@@ -33,14 +33,31 @@ public class TableResultSetHandler extends Handler {
         String newTableName = context.getNewTableName();
         List<String> oldColumns = context.getOldColumns();
         List<String> newColumns = context.getNewColumns();
-        List<String> oldTableResultSet = getResultSet(oldTableName, oldColumns);
-        List<String> newTableResultSet = getResultSet(newTableName, newColumns);
-        return isEqual(oldTableResultSet, newTableResultSet);
+        List<String> resultSetStartIndex = context.getResultSetStartIndex();
+        List<String> resultSetEndIndex = context.getResultSetEndIndex();
+        String primaryKey = context.getPrimaryKey();
+        for (int i = 0; i < resultSetStartIndex.size() - 1; i++) {
+            String start = resultSetStartIndex.get(i);
+            String end = resultSetEndIndex.get(i);
+            List<String> oldResultSet = getResultSet(oldTableName, oldColumns, primaryKey, start, end);
+            List<String> newResultSet = getResultSet(newTableName, newColumns, primaryKey, start, end);
+            if (!isEqual(oldResultSet, newResultSet)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<String> getResultSet(final String tableName, final List<String> columns) throws SQLException {
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
         String sql = String.format("select %s from %s;", columnNames, tableName);
+        ResultSet resultSet = getStatement().executeQuery(sql);
+        return processingData(resultSet);
+    }
+
+    private List<String> getResultSet(final String tableName, final List<String> columns, final String primaryKey, final String start, final String end) throws SQLException {
+        String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
+        String sql = String.format("select %s from %s where %s >= %s and %s <= %s;", columnNames, tableName, primaryKey, start, primaryKey, end);
         ResultSet resultSet = getStatement().executeQuery(sql);
         return processingData(resultSet);
     }
