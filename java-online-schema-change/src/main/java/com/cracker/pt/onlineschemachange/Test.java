@@ -62,14 +62,14 @@ public final class Test {
     public static void main(final String[] args) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         System.out.println(df.format(System.currentTimeMillis()));
-//        AlterStatement alterStatement = getAddAlterStatement();
+        AlterStatement alterStatement = getAddAlterStatement();
 //        AlterStatement alterStatement = getDropAlterStatement();
-        AlterStatement alterStatement = getChangeAlterStatement();
+//        AlterStatement alterStatement = getChangeAlterStatement();
         Execute execute = new Execute(dataSource);
         execute.alterTable(alterStatement);
         System.out.println(df.format(System.currentTimeMillis()));
-//        AlterStatement alterStatement2 = getDropAlterStatement();
-        AlterStatement alterStatement2 = getChangeAlterStatement2();
+        AlterStatement alterStatement2 = getDropAlterStatement();
+//        AlterStatement alterStatement2 = getChangeAlterStatement2();
         Execute execute2 = new Execute(dataSource);
         execute2.alterTable(alterStatement2);
         System.out.println(df.format(System.currentTimeMillis()));

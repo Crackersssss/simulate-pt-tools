@@ -29,37 +29,23 @@ public class TableResultSetHandler extends Handler {
     }
 
     public boolean resultSetComparison(final ExecuteContext context) throws SQLException {
-        String oldTableName = context.getAlterStatement().getTableName();
-        String newTableName = context.getNewTableName();
-        List<String> oldColumns = context.getOldColumns();
-        List<String> newColumns = context.getNewColumns();
-        List<String> resultSetStartIndex = context.getResultSetStartIndex();
-        List<String> resultSetEndIndex = context.getResultSetEndIndex();
-        String primaryKey = context.getPrimaryKey();
-        for (int i = 0; i < resultSetStartIndex.size() - 1; i++) {
-            String start = resultSetStartIndex.get(i);
-            String end = resultSetEndIndex.get(i);
-            List<String> oldResultSet = getResultSet(oldTableName, oldColumns, primaryKey, start, end);
-            List<String> newResultSet = getResultSet(newTableName, newColumns, primaryKey, start, end);
-            if (!isEqual(oldResultSet, newResultSet)) {
-                return false;
-            }
-        }
-        return true;
+        String leftSQL = getSubSQL(context.getAlterStatement().getTableName(), context.getOldColumns());
+        String rightSQL = getSubSQL(context.getNewTableName(), context.getNewColumns());
+        return getResult(leftSQL, rightSQL);
     }
 
-    private List<String> getResultSet(final String tableName, final List<String> columns) throws SQLException {
-        String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        String sql = String.format("select %s from %s;", columnNames, tableName);
+    private boolean getResult(final String leftSQL, final String rightSQL) throws SQLException {
+        String sql = String.format("%s UNION ALL %s;", leftSQL, rightSQL);
         ResultSet resultSet = getStatement().executeQuery(sql);
-        return processingData(resultSet);
+        List<String> results = processingData(resultSet);
+        String result = results.stream().reduce((a, b) -> String.valueOf(a.equals(b))).orElseThrow(() -> new RuntimeException("unknown error"));
+        return String.valueOf(Boolean.TRUE).equals(result);
     }
 
-    private List<String> getResultSet(final String tableName, final List<String> columns, final String primaryKey, final String start, final String end) throws SQLException {
-        String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        String sql = String.format("select %s from %s where %s >= %s and %s <= %s;", columnNames, tableName, primaryKey, start, primaryKey, end);
-        ResultSet resultSet = getStatement().executeQuery(sql);
-        return processingData(resultSet);
+    private String getSubSQL(final String tableName, final List<String> columns) {
+        StringBuilder columnNames = new StringBuilder();
+        columns.forEach(each -> columnNames.append(String.format("ifnull(%s, NULL), ", each)));
+        return String.format("SELECT sum(crc32(concat(%s))) AS sum FROM %s", columnNames.substring(0, columnNames.length() - 2), tableName);
     }
 
     private List<String> processingData(final ResultSet resultSet) {
@@ -83,6 +69,7 @@ public class TableResultSetHandler extends Handler {
         return result;
     }
 
+    @SuppressWarnings("unused")
     private Optional<String> computeMD5(final String data) {
         if (null == data || data.length() == 0) {
             return Optional.empty();
@@ -102,24 +89,6 @@ public class TableResultSetHandler extends Handler {
             e.printStackTrace();
         }
         return Optional.empty();
-    }
-
-    private boolean isEqual(final List<String> oldTableResultSet, final List<String> newTableResultSet) {
-        if (oldTableResultSet.size() != newTableResultSet.size()) {
-            log.error("size inconsistency!");
-            return false;
-        }
-        List<String> computeResult = new ArrayList<>();
-        StringBuilder oldResult = oldTableResultSet.stream()
-                .reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)), (a, b) -> null);
-        StringBuilder newResult = newTableResultSet.stream()
-                .reduce(new StringBuilder(), (a, b) -> a.append(computeMD5(b)), (a, b) -> null);
-        computeResult.add(String.valueOf(oldResult));
-        computeResult.add(String.valueOf(newResult));
-        String opinion = computeResult.stream()
-                .map(each -> computeMD5(each).orElseThrow(() -> new RuntimeException("Line MD5 calculation error!")))
-                .reduce((a, b) -> String.valueOf(a.equals(b))).orElse(String.valueOf(Boolean.FALSE));
-        return String.valueOf(Boolean.TRUE).equals(opinion);
     }
 
     @Override

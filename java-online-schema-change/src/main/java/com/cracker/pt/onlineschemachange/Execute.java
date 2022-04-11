@@ -172,7 +172,6 @@ public final class Execute {
         try {
             resultSetHandler = new TableResultSetHandler(dataSource);
             resultSetHandler.begin();
-            resultSetHandler.resultSetComparison(context);
             boolean comparison = resultSetHandler.resultSetComparison(context);
             if (!comparison) {
                 dropHandler = new TableDropHandler(dataSource);

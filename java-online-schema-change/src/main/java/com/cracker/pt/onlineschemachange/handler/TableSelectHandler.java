@@ -55,7 +55,7 @@ public class TableSelectHandler extends Handler {
         String tableName = context.getAlterStatement().getTableName();
         String copyStartIndex = context.getCopyStartIndex();
         String copyMaxIndex = context.getCopyMaxIndex();
-        String copyBlockSize = "1000";
+        String copyBlockSize = "10000";
         String sql = String.format("SELECT %s FROM "
                 + "(SELECT %s FROM %s WHERE (((%s >= %s))) AND (((%s <= %s))) ORDER BY %s ASC LIMIT %s) SEL1 "
                 + "ORDER BY %s DESC LIMIT 1",
