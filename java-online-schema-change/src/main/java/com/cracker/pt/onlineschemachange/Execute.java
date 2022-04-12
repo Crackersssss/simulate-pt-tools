@@ -58,16 +58,16 @@ public final class Execute {
                     createHandler.rollback();
                 }
             } catch (SQLException exception) {
-                exception.printStackTrace();
+                throw new OnlineDDLException("An exception occurred while creating a table rollback : %s", exception.getMessage());
             }
-            e.printStackTrace();
+            throw new OnlineDDLException("An exception occurred while creating the table : %s", e.getMessage());
         } finally {
             try {
                 if (createHandler != null) {
                     createHandler.close();
                 }
-            } catch (SQLException exception) {
-                exception.printStackTrace();
+            } catch (SQLException e) {
+                log.error("An error occurred while closing TableCreateHandler : {}", e.getMessage());
             }
         }
     }
@@ -86,16 +86,16 @@ public final class Execute {
                     alterHandler.rollback();
                 }
             } catch (SQLException exception) {
-                exception.printStackTrace();
+                throw new OnlineDDLException("An error occurred while modifying the table rollback : %s", exception.getMessage());
             }
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred while modifying the table : %s", e.getMessage());
         } finally {
             try {
                 if (null != alterHandler) {
                     alterHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableAlterHandler : {}", e.getMessage());
             }
         }
     }
@@ -115,16 +115,16 @@ public final class Execute {
                     triggerHandler.rollback();
                 }
             } catch (SQLException exception) {
-                exception.printStackTrace();
+                throw new OnlineDDLException("An error occurred while creating the trigger rollback : %s", exception.getMessage());
             }
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred while creating the trigger : %s", e.getMessage());
         } finally {
             try {
                 if (null != triggerHandler) {
                     triggerHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableTriggerHandler : {}", e.getMessage());
             }
         }
     }
@@ -153,14 +153,14 @@ public final class Execute {
                 context.getResultSetEndIndex().add(context.getCopyEndIndex());
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred while copying data : %s", e.getMessage());
         } finally {
             try {
                 if (null != dataHandler) {
                     dataHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableDataHandler : {}", e.getMessage());
             }
         }
     }
@@ -185,7 +185,7 @@ public final class Execute {
             log.info("Consistent result set.");
             resultSetHandler.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred while comparing result sets : %s", e.getMessage());
         } finally {
             try {
                 if (null != resultSetHandler) {
@@ -198,7 +198,7 @@ public final class Execute {
                     triggerHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableResultSetHandler or TableDropHandler or TableTriggerHandler : {}", e.getMessage());
             }
         }
     }
@@ -218,16 +218,16 @@ public final class Execute {
                     renameHandler.rollback();
                 }
             } catch (SQLException exception) {
-                exception.printStackTrace();
+                throw new OnlineDDLException("An error occurred during the rename table rollback : %s", exception.getMessage());
             }
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred during the rename table : %s", e.getMessage());
         } finally {
             try {
                 if (null != renameHandler) {
                     renameHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableRenameHandler : {}", e.getMessage());
             }
         }
     }
@@ -246,16 +246,16 @@ public final class Execute {
                     dropHandler.rollback();
                 }
             } catch (SQLException exception) {
-                exception.printStackTrace();
+                throw new OnlineDDLException("An error occurred while deleting a table for rollback : %s", exception.getMessage());
             }
-            e.printStackTrace();
+            throw new OnlineDDLException("An error occurred while deleting a table : %s", e.getMessage());
         } finally {
             try {
                 if (null != dropHandler) {
                     dropHandler.close();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("An error occurred while closing TableDropHandler : {}", e.getMessage());
             }
         }
     }

@@ -33,7 +33,7 @@ public class TableDataHandler extends Handler {
         String copyStartIndex = context.getCopyStartIndex();
         String copyEndIndex = context.getCopyEndIndex();
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));
-        return String.format("select %s from %s where %s >= %s and %s <= %s",
+        return String.format("select %s from %s where %s >= '%s' and %s <= '%s'",
                 columnNames, tableName, primaryKey, copyStartIndex, primaryKey, copyEndIndex);
     }
 

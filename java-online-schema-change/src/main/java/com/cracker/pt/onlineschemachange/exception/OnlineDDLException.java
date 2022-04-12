@@ -9,6 +9,7 @@ public class OnlineDDLException extends RuntimeException {
         super(String.format(errorMessage, args));
     }
 
+    @SuppressWarnings("unused")
     public OnlineDDLException(final Exception cause) {
         super(cause);
     }
