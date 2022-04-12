@@ -79,22 +79,20 @@ public class TableTriggerHandler extends Handler {
 
         switch (execute) {
             case DELETE:
-                sql = "CREATE TRIGGER `" + database + "`.`trigger_" + tableName + "_del` AFTER DELETE ON " +
-                        database + "." + tableName + " FOR EACH ROW DELETE FROM " + database + "." + shardowTableName +
-                        " WHERE (" + pkStr + ") = (" + oldPKStr + ")";
-
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_del` AFTER DELETE ON %s.%s FOR EACH ROW DELETE " +
+                        "FROM %s.%s WHERE (%s) = (%s)",database,tableName,database,tableName,database,
+                        shardowTableName,pkStr,oldPKStr);
                 break;
             case UPDATE:
-                sql = "CREATE TRIGGER `" + database + "`.`trigger_" + tableName + "_upd` AFTER UPDATE ON  " +
-                        database + "." + tableName + " FOR EACH ROW BEGIN \n" +
-                        " DELETE FROM " + database + "." + shardowTableName + " WHERE (" + pkStr + ") = (" + oldPKStr + "); \n" +
-                        " REPLACE INTO " + database + "." + shardowTableName + " (" + columnStr + ") \n" + "VALUES (" + NewColumnStr + ");END";
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_upd` AFTER UPDATE ON  %s.%s FOR EACH ROW BEGIN \n" +
+                        " DELETE FROM %s.%s WHERE (%s) = (%s); \n" +
+                        " REPLACE INTO %s.%s (%s) \n" + "VALUES (%s);END",database,tableName,database,tableName,
+                        database,shardowTableName,pkStr,oldPKStr,database,shardowTableName,columnStr,NewColumnStr);
                 break;
             case INSERT:
-                sql = "CREATE TRIGGER `" + database + "`.`trigger_" + tableName + "_ins` AFTER INSERT ON " +
-                        database + "." + tableName + "" + " FOR EACH ROW REPLACE INTO "
-                        + database + "." + shardowTableName + " (" + columnStr + ") VALUES (" + NewColumnStr + ")";
-
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_ins` AFTER INSERT ON %s.%s FOR EACH ROW REPLACE " +
+                        "INTO %s.%s (%s) VALUES (%s)",database,tableName,database,tableName,database,shardowTableName
+                        ,columnStr,NewColumnStr);
                 break;
             default:
                 throw new OnlineDDLException("Unable to create trigger of type %s", execute);
