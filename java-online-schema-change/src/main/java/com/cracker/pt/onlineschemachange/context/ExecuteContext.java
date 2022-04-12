@@ -27,15 +27,15 @@ public final class ExecuteContext {
 
     private String renameOldTableName;
 
-    private String primaryKey;
+    private List<String> primaryKey;
 
-    private String copyMinIndex;
+    private List<String> copyMinIndex;
 
-    private String copyMaxIndex;
+    private List<String>  copyMaxIndex;
 
-    private String copyStartIndex;
+    private List<String>  copyStartIndex;
 
-    private String copyEndIndex;
+    private List<String>  copyEndIndex;
 
     private List<String> resultSetStartIndex = new ArrayList<>();
 

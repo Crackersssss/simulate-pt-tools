@@ -10,15 +10,19 @@ public final class DataSource {
 
     private final String dataSourceName;
 
+    private final String databaseName;
+
     private final HikariDataSource hikariDataSource;
 
-    public DataSource(final String dataSourceName, final HikariConfig config) {
+    public DataSource(final String dataSourceName, final HikariConfig config, final String databaseName) {
         this.dataSourceName = dataSourceName;
+        this.databaseName = databaseName;
         this.hikariDataSource = new HikariDataSource(config);
     }
 
-    public DataSource(final Config config) {
+    public DataSource(final Config config, String databaseName) {
         this.dataSourceName = config.getDataSourceName();
         this.hikariDataSource = new HikariDataSource(config.getHikariConfig());
+        this.databaseName = databaseName;
     }
 }

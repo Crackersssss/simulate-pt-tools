@@ -15,7 +15,14 @@ import com.cracker.pt.onlineschemachange.handler.TableTriggerHandler;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 import lombok.extern.slf4j.Slf4j;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Online DDL Executor.
@@ -32,16 +39,41 @@ public final class Execute {
     public void alterTable(final AlterStatement alterStatement) {
         ExecuteContext context = new ExecuteContext();
         context.setAlterStatement(alterStatement);
+        dropTrigger(context);
         executeCreate(context);
         executeAlter(context);
         executeTrigger(context);
         executeDataCopy(context);
         executeResultSet(context);
+
         executeRename(context);
         executeDrop(context);
         if (!dataSource.getHikariDataSource().isClosed()) {
             dataSource.getHikariDataSource().close();
         }
+    }
+
+    private void dropTrigger(ExecuteContext context) {
+
+        try {
+            Statement statement = new TableSelectHandler(dataSource).getConnection().createStatement();
+
+            String tableName = context.getAlterStatement().getTableName();
+            String upTriggerName = String.format("trigger_%s_upd",tableName);
+            String delTriggerName = String.format("trigger_%s_del",tableName);
+            String insTriggerName = String.format("trigger_%s_ins",tableName);
+
+            String DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",upTriggerName);
+            statement.execute(DropTriggerSql);
+            DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",delTriggerName);
+            statement.execute(DropTriggerSql);
+            DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",insTriggerName);
+            statement.execute(DropTriggerSql);
+
+        } catch (SQLException e) {
+            throw new RuntimeException("delete trigger fail");
+        }
+
     }
 
     public void executeCreate(final ExecuteContext context) {
@@ -129,29 +161,37 @@ public final class Execute {
         }
     }
 
+    public static final String MAX_PKS = "maxPk";
+    public static final String MIN_PKS = "minPk";
+
     public void executeDataCopy(final ExecuteContext context) {
         TableDataHandler dataHandler = null;
         TableSelectHandler selectHandler;
+
         try {
             selectHandler = new TableSelectHandler(dataSource);
             dataHandler = new TableDataHandler(dataSource);
             selectHandler.setCopyMinIndex(context);
             selectHandler.setCopyMaxIndex(context);
             context.setCopyStartIndex(context.getCopyMinIndex());
-            selectHandler.setCopyEndIndex(context);
-            context.getResultSetStartIndex().add(context.getCopyStartIndex());
-            context.getResultSetEndIndex().add(context.getCopyEndIndex());
-            while (true) {
-                String copySQL = dataHandler.generateCopySQL(context);
-                dataHandler.copyData(copySQL);
-                if (context.isEnd()) {
-                    break;
-                }
-                selectHandler.setCopyStartIndex(context);
-                selectHandler.setCopyEndIndex(context);
-                context.getResultSetStartIndex().add(context.getCopyStartIndex());
-                context.getResultSetEndIndex().add(context.getCopyEndIndex());
+            List<String> primaryKey = context.getPrimaryKey();
+            StringJoiner primaryKeySJ = new StringJoiner(",");
+            for (String s : primaryKey) {
+                primaryKeySJ.add(s);
             }
+            List<String> copyMaxIndex = context.getCopyMaxIndex();
+            List<String> copyMinIndex = context.getCopyMinIndex();
+            Map<String, List<String>> primaryKeyScopList = new HashMap<>();
+            primaryKeyScopList.put(MAX_PKS, copyMaxIndex);
+            primaryKeyScopList.put(MIN_PKS, copyMinIndex);
+            List<String> oldColumns = context.getOldColumns();
+            List<String> newColumns = context.getNewColumns();
+            String shardowTableName = context.getNewTableName();
+            String tableName = context.getAlterStatement().getTableName();
+            String database = dataSource.getDatabaseName();
+
+            selectHandler.cutToExe(primaryKeySJ.toString(), primaryKeyScopList, newColumns, oldColumns, shardowTableName,
+                    tableName, database);
         } catch (SQLException e) {
             throw new OnlineDDLException("An error occurred while copying data : %s", e.getMessage());
         } finally {

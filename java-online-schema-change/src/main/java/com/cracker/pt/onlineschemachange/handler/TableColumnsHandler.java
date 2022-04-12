@@ -1,10 +1,14 @@
 package com.cracker.pt.onlineschemachange.handler;
 
 import com.cracker.pt.core.database.DataSource;
+import com.zaxxer.hikari.HikariDataSource;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,7 +25,8 @@ public class TableColumnsHandler extends Handler {
 
     public List<String> getAllColumns(final String tableName) throws SQLException {
         List<String> resultSets = new ArrayList<>();
-        String sql = String.format("SHOW COLUMNS FROM %s;", tableName);
+        String databaseName = getDatabaseName();
+        String sql = String.format("SHOW COLUMNS FROM %s.%s;", databaseName,tableName);
         ResultSet resultSet = getStatement().executeQuery(sql);
         while (resultSet.next()) {
             resultSets.add(String.valueOf(resultSet.getString(FIELD_COLUMN_NAME)));
