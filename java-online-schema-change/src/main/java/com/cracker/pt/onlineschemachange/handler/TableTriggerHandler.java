@@ -114,7 +114,16 @@ public class TableTriggerHandler extends Handler {
     }
 
     public void dropAllTrigger(final ExecuteContext context) throws SQLException {
-        String sql = String.format("drop trigger %s, %s, %s;", context.getDeleteTrigger(), context.getUpdateTrigger(), context.getInsertTrigger());
+        String deleteTrigger = context.getDeleteTrigger();
+        String updateTrigger = context.getUpdateTrigger();
+        String insertTrigger = context.getInsertTrigger();
+        dropTrigger(deleteTrigger);
+        dropTrigger(updateTrigger);
+        dropTrigger(insertTrigger);
+    }
+
+    private void dropTrigger(final String triggerName) throws SQLException {
+        String sql = String.format("drop trigger if exist %s;", triggerName);
         getStatement().executeUpdate(sql);
     }
 

@@ -48,4 +48,6 @@ public final class ExecuteContext {
     private String insertTrigger;
 
     private boolean isEnd;
+
+    private boolean isSuccess;
 }

@@ -2,6 +2,7 @@ package com.cracker.pt.onlineschemachange;
 
 import com.cracker.pt.core.database.DataSource;
 import com.cracker.pt.onlineschemachange.context.ExecuteContext;
+import com.cracker.pt.onlineschemachange.context.ExecuteDatasource;
 import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
 import com.cracker.pt.onlineschemachange.handler.TableAlterHandler;
 import com.cracker.pt.onlineschemachange.handler.TableColumnsHandler;
@@ -12,10 +13,11 @@ import com.cracker.pt.onlineschemachange.handler.TableRenameHandler;
 import com.cracker.pt.onlineschemachange.handler.TableResultSetHandler;
 import com.cracker.pt.onlineschemachange.handler.TableSelectHandler;
 import com.cracker.pt.onlineschemachange.handler.TableTriggerHandler;
-import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Online DDL Executor.
@@ -23,34 +25,71 @@ import java.sql.SQLException;
 @Slf4j
 public final class Execute {
 
-    private final DataSource dataSource;
+    private final List<ExecuteDatasource> executeDatasourceList;
 
-    public Execute(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public Execute(final List<ExecuteDatasource> executeDatasourceList) {
+        this.executeDatasourceList = executeDatasourceList;
     }
 
-    public void alterTable(final AlterStatement alterStatement) {
-        ExecuteContext context = new ExecuteContext();
-        context.setAlterStatement(alterStatement);
-        executeCreate(context);
-        executeAlter(context);
-        executeTrigger(context);
-        executeDataCopy(context);
-        executeResultSet(context);
-        executeRename(context);
-        executeDrop(context);
-        if (!dataSource.getHikariDataSource().isClosed()) {
-            dataSource.getHikariDataSource().close();
+    public void alterTable() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(executeDatasourceList.size());
+        taskExecutor.setMaxPoolSize(executeDatasourceList.size() + 1);
+        taskExecutor.setQueueCapacity(Integer.MAX_VALUE);
+        taskExecutor.setKeepAliveSeconds(60);
+        taskExecutor.setThreadNamePrefix("OnlineDDLStartThread");
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.initialize();
+        executeDatasourceList.forEach(each -> taskExecutor.submitListenable(() -> {
+            ExecuteContext context = new ExecuteContext();
+            each.setContext(context);
+            context.setAlterStatement(each.getAlterStatement());
+            executeCreate(each);
+            executeAlter(each);
+            executeTrigger(each);
+            executeDataCopy(each);
+            executeResultSet(each);
+        }).addCallback(data -> log.info("success,result = {}", data), ex -> log.info("**exception message**：{}", ex.getMessage())));
+        taskExecutor.shutdown();
+        while (taskExecutor.getActiveCount() > 0) {
+            //log.info("Modify, please wait for......");
         }
+        executeDatasourceList.forEach(each -> {
+            if (!each.getContext().isSuccess()) {
+                if (!each.getDataSource().getHikariDataSource().isClosed()) {
+                    each.getDataSource().getHikariDataSource().close();
+                }
+                throw new OnlineDDLException("An error occurred while modifying the table structure and execution was stopped");
+            }
+        });
+        executeDatasourceList.forEach(each -> {
+            executeRename(each);
+            executeDrop(each);
+        });
     }
 
-    public void executeCreate(final ExecuteContext context) {
+//    public void alterTable(final AlterStatement alterStatement) {
+//        ExecuteContext context = new ExecuteContext();
+//        context.setAlterStatement(alterStatement);
+//        executeCreate(context);
+//        executeAlter(context);
+//        executeTrigger(context);
+//        executeDataCopy(context);
+//        executeResultSet(context);
+//        executeRename(context);
+//        executeDrop(context);
+//        if (!dataSource.getHikariDataSource().isClosed()) {
+//            dataSource.getHikariDataSource().close();
+//        }
+//    }
+
+    public void executeCreate(final ExecuteDatasource executeDatasource) {
         TableCreateHandler createHandler = null;
         try {
-            createHandler = new TableCreateHandler(dataSource);
+            createHandler = new TableCreateHandler(executeDatasource.getDataSource());
             createHandler.begin();
-            createHandler.getNewTableName(context);
-            createHandler.createTable(context);
+            createHandler.getNewTableName(executeDatasource.getContext());
+            createHandler.createTable(executeDatasource.getContext());
             createHandler.commit();
         } catch (SQLException e) {
             try {
@@ -72,12 +111,12 @@ public final class Execute {
         }
     }
 
-    public void executeAlter(final ExecuteContext context) {
+    public void executeAlter(final ExecuteDatasource executeDatasource) {
         TableAlterHandler alterHandler = null;
         try {
-            alterHandler = new TableAlterHandler(dataSource);
+            alterHandler = new TableAlterHandler(executeDatasource.getDataSource());
             alterHandler.begin();
-            String alterSQL = alterHandler.generateAlterSQL(context);
+            String alterSQL = alterHandler.generateAlterSQL(executeDatasource.getContext());
             alterHandler.alterTableStruct(alterSQL);
             alterHandler.commit();
         } catch (SQLException e) {
@@ -100,14 +139,14 @@ public final class Execute {
         }
     }
 
-    public void executeTrigger(final ExecuteContext context) {
+    public void executeTrigger(final ExecuteDatasource executeDatasource) {
         TableColumnsHandler columnsHandler;
         TableTriggerHandler triggerHandler = null;
         try {
-            columnsHandler = new TableColumnsHandler(dataSource);
-            triggerHandler = new TableTriggerHandler(dataSource);
+            columnsHandler = new TableColumnsHandler(executeDatasource.getDataSource());
+            triggerHandler = new TableTriggerHandler(executeDatasource.getDataSource());
             triggerHandler.begin();
-            triggerHandler.createTrigger(columnsHandler, context);
+            triggerHandler.createTrigger(columnsHandler, executeDatasource.getContext());
             triggerHandler.commit();
         } catch (SQLException e) {
             try {
@@ -129,12 +168,13 @@ public final class Execute {
         }
     }
 
-    public void executeDataCopy(final ExecuteContext context) {
+    public void executeDataCopy(final ExecuteDatasource executeDatasource) {
         TableDataHandler dataHandler = null;
         TableSelectHandler selectHandler;
         try {
-            selectHandler = new TableSelectHandler(dataSource);
-            dataHandler = new TableDataHandler(dataSource);
+            selectHandler = new TableSelectHandler(executeDatasource.getDataSource());
+            dataHandler = new TableDataHandler(executeDatasource.getDataSource());
+            ExecuteContext context = executeDatasource.getContext();
             selectHandler.setCopyMinIndex(context);
             selectHandler.setCopyMaxIndex(context);
             context.setCopyStartIndex(context.getCopyMinIndex());
@@ -165,13 +205,15 @@ public final class Execute {
         }
     }
 
-    public void executeResultSet(final ExecuteContext context) {
+    public void executeResultSet(final ExecuteDatasource executeDatasource) {
         TableResultSetHandler resultSetHandler = null;
         TableDropHandler dropHandler = null;
         TableTriggerHandler triggerHandler = null;
         try {
+            DataSource dataSource = executeDatasource.getDataSource();
             resultSetHandler = new TableResultSetHandler(dataSource);
             resultSetHandler.begin();
+            ExecuteContext context = executeDatasource.getContext();
             boolean comparison = resultSetHandler.resultSetComparison(context);
             if (!comparison) {
                 dropHandler = new TableDropHandler(dataSource);
@@ -183,6 +225,7 @@ public final class Execute {
                 throw new OnlineDDLException("If the result set is inconsistent, perform the operation again!");
             }
             log.info("Consistent result set.");
+            context.setSuccess(true);
             resultSetHandler.commit();
         } catch (SQLException e) {
             throw new OnlineDDLException("An error occurred while comparing result sets : %s", e.getMessage());
@@ -203,11 +246,12 @@ public final class Execute {
         }
     }
 
-    public void executeRename(final ExecuteContext context) {
+    public void executeRename(final ExecuteDatasource executeDatasource) {
         TableRenameHandler renameHandler = null;
         try {
-            renameHandler = new TableRenameHandler(dataSource);
+            renameHandler = new TableRenameHandler(executeDatasource.getDataSource());
             renameHandler.begin();
+            ExecuteContext context = executeDatasource.getContext();
             renameHandler.getRenameOldTableName(context);
             String renameSQL = renameHandler.generateRenameSQL(context);
             renameHandler.renameTable(renameSQL);
@@ -232,12 +276,12 @@ public final class Execute {
         }
     }
 
-    public void executeDrop(final ExecuteContext context) {
+    public void executeDrop(final ExecuteDatasource executeDatasource) {
         TableDropHandler dropHandler = null;
         try {
-            dropHandler = new TableDropHandler(dataSource);
+            dropHandler = new TableDropHandler(executeDatasource.getDataSource());
             dropHandler.begin();
-            String dropSQL = dropHandler.generateDropSQL(context);
+            String dropSQL = dropHandler.generateDropSQL(executeDatasource.getContext());
             dropHandler.deleteTable(dropSQL);
             dropHandler.commit();
         } catch (SQLException e) {
