@@ -17,7 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * Online DDL Executor.
@@ -44,6 +48,7 @@ public final class Execute {
             ExecuteContext context = new ExecuteContext();
             each.setContext(context);
             context.setAlterStatement(each.getAlterStatement());
+            dropTrigger(each);
             executeCreate(each);
             executeAlter(each);
             executeTrigger(each);
@@ -68,8 +73,9 @@ public final class Execute {
         });
     }
 
-    private void dropTrigger(ExecuteContext context) {
-
+    private void dropTrigger(final ExecuteDatasource executeDatasource) {
+        DataSource dataSource = executeDatasource.getDataSource();
+        ExecuteContext context = executeDatasource.getContext();
         try {
             Statement statement = new TableSelectHandler(dataSource).getConnection().createStatement();
 
@@ -90,22 +96,6 @@ public final class Execute {
         }
 
     }
-
-    public void executeCreate(final ExecuteContext context) {
-//    public void alterTable(final AlterStatement alterStatement) {
-//        ExecuteContext context = new ExecuteContext();
-//        context.setAlterStatement(alterStatement);
-//        executeCreate(context);
-//        executeAlter(context);
-//        executeTrigger(context);
-//        executeDataCopy(context);
-//        executeResultSet(context);
-//        executeRename(context);
-//        executeDrop(context);
-//        if (!dataSource.getHikariDataSource().isClosed()) {
-//            dataSource.getHikariDataSource().close();
-//        }
-//    }
 
     public void executeCreate(final ExecuteDatasource executeDatasource) {
         TableCreateHandler createHandler = null;
@@ -192,17 +182,15 @@ public final class Execute {
         }
     }
 
-    public void executeDataCopy(final ExecuteDatasource executeDatasource) {
     public static final String MAX_PKS = "maxPk";
     public static final String MIN_PKS = "minPk";
-
-    public void executeDataCopy(final ExecuteContext context) {
+    public void executeDataCopy(final ExecuteDatasource executeDatasource) {
         TableDataHandler dataHandler = null;
         TableSelectHandler selectHandler;
-
         try {
-            selectHandler = new TableSelectHandler(executeDatasource.getDataSource());
-            dataHandler = new TableDataHandler(executeDatasource.getDataSource());
+            DataSource dataSource = executeDatasource.getDataSource();
+            selectHandler = new TableSelectHandler(dataSource);
+            dataHandler = new TableDataHandler(dataSource);
             ExecuteContext context = executeDatasource.getContext();
             selectHandler.setCopyMinIndex(context);
             selectHandler.setCopyMaxIndex(context);

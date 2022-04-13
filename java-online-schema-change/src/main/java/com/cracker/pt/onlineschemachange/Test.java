@@ -23,7 +23,7 @@ public final class Test {
         properties.setProperty(JDBCProps.USERNAME.getPropName(), "pcloud");
         properties.setProperty(JDBCProps.PASSWORD.getPropName(), "pcloud");
         Config config = new Config("resource_0", properties);
-        dataSource = new DataSource(config);
+        dataSource = new DataSource(config, "test");
     }
 
     private static AlterStatement getAddAlterStatement() {
@@ -77,13 +77,13 @@ public final class Test {
         String columnType3 = "varchar(30)";
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3, columnType3);
-        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
         String tableName4 = "pt_table2";
         String alterType4 = "add";
         String columnName4 = "test_columns";
         String columnType4 = "varchar(30)";
         AlterStatement alterStatement2 = new AlterStatement(tableName4, alterType4, columnName4, columnType4);
-        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config, "pt_db")));
         Execute execute = new Execute(executeDatasource);
         execute.alterTable();
     }
@@ -101,12 +101,12 @@ public final class Test {
         String columnName3 = "test_columns";
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3);
-        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
         String tableName4 = "pt_table2";
         String alterType4 = "drop";
         String columnName4 = "test_columns";
         AlterStatement alterStatement2 = new AlterStatement(tableName4, alterType4, columnName4);
-        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config, "pt_db")));
         Execute execute = new Execute(executeDatasource);
         execute.alterTable();
     }
@@ -126,14 +126,14 @@ public final class Test {
         String columnType3 = "char(30)";
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3, newColumnName3, columnType3);
-        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
         String tableName4 = "pt_table2";
         String alterType4 = "change";
         String columnName4 = "alter_column";
         String newColumnName4 = "bbb";
         String columnType4 = "char(30)";
         AlterStatement alterStatement2 = new AlterStatement(tableName4, alterType4, columnName4, newColumnName4, columnType4);
-        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config, "pt_db")));
         Execute execute = new Execute(executeDatasource);
         execute.alterTable();
     }
@@ -153,14 +153,14 @@ public final class Test {
         String columnType3 = "char(30)";
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3, newColumnName3, columnType3);
-        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
         String tableName4 = "pt_table2";
         String alterType4 = "change";
         String columnName4 = "bbb";
         String newColumnName4 = "alter_column";
         String columnType4 = "char(30)";
         AlterStatement alterStatement2 = new AlterStatement(tableName4, alterType4, columnName4, newColumnName4, columnType4);
-        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config)));
+        executeDatasource.add(new ExecuteDatasource(alterStatement2, new DataSource(config, "pt_db")));
         Execute execute = new Execute(executeDatasource);
         execute.alterTable();
     }
