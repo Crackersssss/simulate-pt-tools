@@ -27,9 +27,9 @@ public class TableTriggerHandler extends Handler {
 
     public void createTrigger(final TableColumnsHandler columnsHandler, final ExecuteContext context) throws SQLException {
         ResultSet resultSet = getConnection().getMetaData().getPrimaryKeys(null, null, context.getNewTableName());
-        String primaryKey = null;
+        List<String> primaryKey = new ArrayList<>();
         while (resultSet.next()) {
-            primaryKey = resultSet.getString(COLUMN_NAME);
+            primaryKey.add(resultSet.getString(COLUMN_NAME));
         }
         if (null == primaryKey) {
             throw new OnlineDDLException("Table %s has no primary key", context.getAlterStatement().getTableName());
@@ -44,45 +44,58 @@ public class TableTriggerHandler extends Handler {
         getStatement().executeUpdate(sql);
     }
 
-    private String getCreateTriggerSQL(final ExecuteContext context, final String primaryKey, final TriggerType execute) {
+    private String getCreateTriggerSQL(final ExecuteContext context, final List<String> primaryKey,
+                                       final TriggerType execute) {
         List<String> tableColumns = context.getOldColumns();
-        List<String> newTableColumns = context.getNewColumns();
         String tableName = context.getAlterStatement().getTableName();
-        String newTableName = context.getNewTableName();
-        String tableColumnNames;
-        String newTableColumnNames;
+        String shardowTableName = context.getNewTableName();
+        String database = getDatabaseName();
         String sql;
-        String triggerName;
+
+        StringJoiner columnStr = new StringJoiner(",");
+        for (String s : tableColumns) {
+            columnStr.add(s);
+        }
+
+        //获取NEW字段
+        StringJoiner NewColumnStr = new StringJoiner(",NEW.", "NEW.", "");
+        for (String s : tableColumns) {
+            NewColumnStr.add(s);
+        }
+
+        StringJoiner pkStr = new StringJoiner(",");
+        for (String s : primaryKey) {
+            pkStr.add(s);
+        }
+
+        //获取OLD主键
+        StringJoiner oldPKStr = new StringJoiner(",OLD.", "OLD.", "");
+
+        for (String s : primaryKey) {
+            oldPKStr.add(s);
+        }
+
         switch (execute) {
             case DELETE:
-                triggerName = String.format("trigger_%s_del", tableName);
-                context.setDeleteTrigger(triggerName);
-                sql = getSQLHead(triggerName, execute, tableName) + String.format("delete from %s where %s=old.%s; end", newTableName, primaryKey, primaryKey);
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_del` AFTER DELETE ON %s.%s FOR EACH ROW DELETE " +
+                        "FROM %s.%s WHERE (%s) = (%s)",database,tableName,database,tableName,database,
+                        shardowTableName,pkStr,oldPKStr);
                 break;
             case UPDATE:
-                tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                triggerName = String.format("trigger_%s_upd", tableName);
-                context.setUpdateTrigger(triggerName);
-                sql = getSQLHead(triggerName, execute, tableName) + String.format("delete from %s where %s=old.%s;", newTableName, primaryKey, primaryKey);
-                sql = sql + String.format("REPLACE into %s (%s) (select %s from %s where %s=old.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_upd` AFTER UPDATE ON  %s.%s FOR EACH ROW BEGIN \n" +
+                        " DELETE FROM %s.%s WHERE (%s) = (%s); \n" +
+                        " REPLACE INTO %s.%s (%s) \n" + "VALUES (%s);END",database,tableName,database,tableName,
+                        database,shardowTableName,pkStr,oldPKStr,database,shardowTableName,columnStr,NewColumnStr);
                 break;
             case INSERT:
-                tableColumnNames = tableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                newTableColumnNames = newTableColumns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException(UNKNOWN_ERROR));
-                triggerName = String.format("trigger_%s_ins", tableName);
-                context.setInsertTrigger(triggerName);
-                sql = getSQLHead(triggerName, execute, tableName)
-                        + String.format("REPLACE into %s (%s) (select %s from %s where %s=new.%s); end", newTableName, newTableColumnNames, tableColumnNames, tableName, primaryKey, primaryKey);
+                sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_ins` AFTER INSERT ON %s.%s FOR EACH ROW REPLACE " +
+                        "INTO %s.%s (%s) VALUES (%s)",database,tableName,database,tableName,database,shardowTableName
+                        ,columnStr,NewColumnStr);
                 break;
             default:
                 throw new OnlineDDLException("Unable to create trigger of type %s", execute);
         }
         return sql;
-    }
-
-    private String getSQLHead(final String triggerName, final TriggerType execute, final String tableName) {
-        return String.format("create trigger %s after %s on %s for each row begin ", triggerName, execute, tableName);
     }
 
     public void getColumns(final TableColumnsHandler columnsHandler, final ExecuteContext context) throws SQLException {
@@ -114,6 +127,11 @@ public class TableTriggerHandler extends Handler {
     }
 
     public void dropAllTrigger(final ExecuteContext context) throws SQLException {
+        String sql = String.format("drop trigger %s", context.getDeleteTrigger());
+        getStatement().executeUpdate(sql);
+        sql = String.format("drop trigger %s", context.getUpdateTrigger());
+        getStatement().executeUpdate(sql);
+        sql = String.format("drop trigger %s", context.getInsertTrigger());
         String deleteTrigger = context.getDeleteTrigger();
         String updateTrigger = context.getUpdateTrigger();
         String insertTrigger = context.getInsertTrigger();

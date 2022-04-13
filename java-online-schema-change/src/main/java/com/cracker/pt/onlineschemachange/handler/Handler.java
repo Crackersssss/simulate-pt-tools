@@ -14,13 +14,18 @@ import java.sql.Statement;
  */
 public abstract class Handler {
 
+    @Getter
     private final HikariDataSource dataSource;
+
+    @Getter
+    private final String databaseName;
 
     @Getter
     @Setter
     private Connection connection;
 
     protected Handler(final DataSource dataSource) {
+        this.databaseName = dataSource.getDatabaseName();
         this.dataSource = dataSource.getHikariDataSource();
     }
 
