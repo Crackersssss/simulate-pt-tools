@@ -85,6 +85,18 @@ public class TableSelectHandler extends Handler {
         //局部范围10000内的主键范围
         List<String> localMinPkList = new ArrayList<>(minPkList);
         List<String> localMaxPkList = new ArrayList<>(maxPkList);
+        //查询是否只有一行数据，如果只有一行下面的while不会执行，需要特殊执行插入
+        Integer countTable = countTableLine(database, tableName);
+        StringJoiner newColumnSJ = new StringJoiner(",");
+        for (String s : newColumnList) {
+            newColumnSJ.add(s);
+        }
+        if(countTable==1){
+            String sql = String.format("INSERT INTO %s(%s) (SELECT %s FROM %s)",shardowTableName,newColumnSJ,
+                    newColumnSJ,tableName);
+            getStatement().execute(sql);
+            return;
+        }
 
         //查询切割10000条
         while (minColumn.compareTo(maxColumn) < 0) {
@@ -108,6 +120,15 @@ public class TableSelectHandler extends Handler {
             localMinPkList = pkList;
             minColumn = localMinPkList.get(0);
         }
+    }
+
+    private Integer countTableLine(String database, String tableName) throws SQLException {
+        String sql = String.format("SELECT COUNT(*) AS COUNT FROM %s.%s", database, tableName);
+        ResultSet resultSet = getStatement().executeQuery(sql);
+        while (resultSet.next()) {
+            return resultSet.getInt("COUNT");
+        }
+        return -1;
     }
 
     public String makeInsertSql(String shardowTableName, String primaryKey, List<String> newColumnList,
