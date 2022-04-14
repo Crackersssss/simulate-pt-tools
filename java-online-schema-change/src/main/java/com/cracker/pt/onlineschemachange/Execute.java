@@ -50,7 +50,7 @@ public final class Execute {
             executeTrigger(each);
             executeDataCopy(each);
             executeResultSet(each);
-        }).addCallback(data -> log.info("success,result = {}", data), ex -> log.info("**exception message**：{}", ex.getMessage())));
+        }).addCallback(data -> log.info("success,result = {}", data), ex -> log.info("**exception message**：{}, {}", ex.getMessage(), ex.getCause())));
         taskExecutor.shutdown();
         while (taskExecutor.getActiveCount() > 0) {
             //log.info("Modify, please wait for......");

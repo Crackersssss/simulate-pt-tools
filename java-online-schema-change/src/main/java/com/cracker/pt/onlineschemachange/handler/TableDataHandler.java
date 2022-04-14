@@ -7,9 +7,7 @@ import com.cracker.pt.onlineschemachange.utils.StringUtils;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 /**
@@ -17,9 +15,12 @@ import java.util.StringJoiner;
  */
 public class TableDataHandler extends Handler {
 
+    private boolean isFirst;
+
     public TableDataHandler(final DataSource dataSource) throws SQLException {
         super(dataSource);
         init();
+        isFirst = false;
     }
 
     public String generateCopySQL(final ExecuteContext context) {
@@ -59,30 +60,29 @@ public class TableDataHandler extends Handler {
         List<String> minPkList = context.getCopyMinIndex();
         List<String> maxPkList = context.getCopyMaxIndex();
         //是否是第一次发送
-        Map<String, Boolean> isFirstExe = new HashMap<>();
-        isFirstExe.put("ISFIRST", true);
+        isFirst = true;
         if (maxPkList == null) {
             return;
         }
-        String minColumn = minPkList.get(0);
-        String maxColumn = maxPkList.get(0);
         //局部范围10000内的主键范围
         List<String> localMinPkList = new ArrayList<>(minPkList);
         List<String> localMaxPkList = new ArrayList<>(maxPkList);
         //查询是否只有一行数据，如果只有一行下面的while不会执行，需要特殊执行插入
         String tableName = context.getAlterStatement().getTableName();
         Integer countTable = countTableLine(database, tableName);
+        List<String> oldColumns = context.getOldColumns();
+        StringJoiner oldColumnSJ = oldColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         List<String> newColumns = context.getNewColumns();
         StringJoiner newColumnSJ = newColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         String newTableName = context.getNewTableName();
         if (countTable == 1) {
             String sql = String.format("INSERT INTO %s(%s) (SELECT %s FROM %s)", newTableName, newColumnSJ,
-                    newColumnSJ, tableName);
+                    oldColumnSJ, tableName);
             getStatement().execute(sql);
             return;
         }
         //查询切割10000条
-        while (StringUtils.compareTo(minColumn, maxColumn) < 0) {
+        while (StringUtils.compareTo(String.join("", localMinPkList), String.join("", localMaxPkList)) < 0) {
             //前置查询
             String searchSql = makeSearchSql(primaryKeyStr, localMinPkList, localMaxPkList, database, tableName);
             //执行查询获得之后第10001条主键值
@@ -94,14 +94,12 @@ public class TableDataHandler extends Handler {
                     pkList.add(resultSet.getString(key));
                 }
             }
-            resultSet.close();
             //插入sql
             String insertSql = makeInsertSql(newTableName, primaryKeys, newColumns,
-                    context.getOldColumns(), localMinPkList, pkList,
-                    database, tableName, isFirstExe);
+                    oldColumns, localMinPkList, pkList,
+                    database, tableName);
             getStatement().execute(insertSql);
             localMinPkList = pkList;
-            minColumn = localMinPkList.get(0);
         }
     }
 
@@ -114,58 +112,38 @@ public class TableDataHandler extends Handler {
     public String makeInsertSql(final String newTableName, final String[] primaryKeys, final List<String> newColumnList,
                                 final List<String> oldColumnList,
                                 final List<String> localMinPkList, final List<String> localMaxPkList, final String database,
-                                final String tableName, final Map<String, Boolean> isFirstExe) {
-
+                                final String tableName) {
         //主键数
         int pkNum = primaryKeys.length;
-
         StringJoiner searchMoreWhereSql = new StringJoiner(") OR (", "(", ")");
         StringBuilder preSearch = new StringBuilder();
-        String[] keymin = new String[pkNum];
-        String[] keymax = new String[pkNum];
-        for (int i = 0; i < pkNum; i++) {
-            keymin[i] = localMinPkList.get(i);
-        }
-        for (int i = 0; i < pkNum; i++) {
-            keymax[i] = localMaxPkList.get(i);
-        }
         for (int i = 0; i < pkNum; i++) {
             if (i == 0) {
-                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + primaryKeys[i] + " > '" + keymin[i] + "'");
-                preSearch.append(primaryKeys[i]).append(" > '").append(keymin[i]).append("'");
+                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + primaryKeys[i] + " > '" + localMinPkList.get(i) + "'");
+                preSearch.append(primaryKeys[i]).append(" > '").append(localMinPkList.get(i)).append("'");
             } else {
-                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + " AND " + primaryKeys[i] + " > '" + keymin[i] + "'");
-                preSearch.append(" AND ").append(primaryKeys[i]).append(" > '").append(keymin[i]).append("'");
+                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + " AND " + primaryKeys[i] + " > '" + localMinPkList.get(i) + "'");
+                preSearch.append(" AND ").append(primaryKeys[i]).append(" > '").append(localMinPkList.get(i)).append("'");
             }
         }
-        if (Boolean.TRUE.equals(isFirstExe.get("ISFIRST"))) {
-            isFirstExe.put("ISFIRST", false);
+        if (isFirst) {
+            isFirst =  false;
             searchMoreWhereSql.add(preSearch.toString().replace(">", "="));
         }
         StringJoiner searchLessWhereSql = new StringJoiner(") OR (", "(", ")");
         StringBuilder preLessSearch = new StringBuilder();
         for (int i = 0; i < pkNum; i++) {
-            keymin[i] = localMinPkList.get(i);
-        }
-        for (int i = 0; i < pkNum; i++) {
             if (i == 0) {
-                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + primaryKeys[i] + " < '" + keymax[i] + "'");
-                preLessSearch.append(primaryKeys[i]).append(" < '").append(keymax[i]).append("'");
+                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + primaryKeys[i] + " < '" + localMaxPkList.get(i) + "'");
+                preLessSearch.append(primaryKeys[i]).append(" < '").append(localMaxPkList.get(i)).append("'");
             } else {
-                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + " AND " + primaryKeys[i] + " < '" + keymax[i] + "'");
-                preLessSearch.append(" AND ").append(primaryKeys[i]).append(" < '").append(keymax[i]).append("'");
+                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + " AND " + primaryKeys[i] + " < '" + localMaxPkList.get(i) + "'");
+                preLessSearch.append(" AND ").append(primaryKeys[i]).append(" < '").append(localMaxPkList.get(i)).append("'");
             }
         }
         searchLessWhereSql.add(preLessSearch.toString().replace("<", "="));
-        StringJoiner newColumnStr = new StringJoiner(",");
-        for (String s : newColumnList) {
-            newColumnStr.add(s);
-        }
-        StringJoiner oldColumnStr = new StringJoiner(",");
-        for (String s : oldColumnList) {
-            oldColumnStr.add(s);
-        }
-
+        StringJoiner newColumnStr = newColumnList.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
+        StringJoiner oldColumnStr = oldColumnList.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         return String.format("INSERT IGNORE INTO %s.%s (%s) (SELECT %s FROM %s.%s force index (primary) where (%s) AND (%s))",
                 database, newTableName, newColumnStr, oldColumnStr, database, tableName, searchMoreWhereSql, searchLessWhereSql);
     }
@@ -177,22 +155,14 @@ public class TableDataHandler extends Handler {
         //存储前半段>的sql
         StringJoiner searchMoreWhereSql = new StringJoiner(") OR (", "(", ")");
         StringBuilder preSearch = new StringBuilder();
-        String[] keymin = new String[pkNum];
-        String[] keymax = new String[pkNum];
-        for (int i = 0; i < pkNum; i++) {
-            keymin[i] = localMinPkList.get(i);
-        }
-        for (int i = 0; i < pkNum; i++) {
-            keymax[i] = localMaxPkList.get(i);
-        }
         for (int i = 0; i < pkNum; i++) {
             //如果是第一次不需要AND衔接
             if (i == 0) {
-                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + primaryKeys[i] + ">'" + keymin[i] + "'");
-                preSearch.append(primaryKeys[i]).append(">'").append(keymin[i]).append("'");
+                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + primaryKeys[i] + ">'" + localMinPkList.get(i) + "'");
+                preSearch.append(primaryKeys[i]).append(">'").append(localMinPkList.get(i)).append("'");
             } else {
-                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + " AND " + primaryKeys[i] + ">'" + keymin[i] + "'");
-                preSearch.append(" AND ").append(primaryKeys[i]).append(">'").append(keymin[i]).append("'");
+                searchMoreWhereSql.add(preSearch.toString().replace(">", "=") + " AND " + primaryKeys[i] + ">'" + localMinPkList.get(i) + "'");
+                preSearch.append(" AND ").append(primaryKeys[i]).append(">'").append(localMinPkList.get(i)).append("'");
             }
         }
         searchMoreWhereSql.add(preSearch.toString().replace(">", "="));
@@ -204,11 +174,11 @@ public class TableDataHandler extends Handler {
         for (int i = 0; i < pkNum; i++) {
             //如果是第一次不需要AND衔接
             if (i == 0) {
-                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + primaryKeys[i] + "<'" + keymax[i] + "'");
-                preLessSearch.append(primaryKeys[i]).append("<'").append(keymax[i]).append("'");
+                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + primaryKeys[i] + "<'" + localMaxPkList.get(i) + "'");
+                preLessSearch.append(primaryKeys[i]).append("<'").append(localMaxPkList.get(i)).append("'");
             } else {
-                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + " AND " + primaryKeys[i] + "<'" + keymax[i] + "'");
-                preLessSearch.append(" AND ").append(primaryKeys[i]).append("<'").append(keymax[i]).append("'");
+                searchLessWhereSql.add(preLessSearch.toString().replace("<", "=") + " AND " + primaryKeys[i] + "<'" + localMaxPkList.get(i) + "'");
+                preLessSearch.append(" AND ").append(primaryKeys[i]).append("<'").append(localMaxPkList.get(i)).append("'");
             }
         }
         searchLessWhereSql.add(preLessSearch.toString().replace("<", "="));
