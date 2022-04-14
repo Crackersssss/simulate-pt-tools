@@ -42,24 +42,4 @@ public class TableAlterHandler extends Handler {
     public void alterTableStruct(final String alterSQL) throws SQLException {
         getStatement().executeUpdate(alterSQL);
     }
-
-    @Override
-    public void begin() throws SQLException {
-        super.begin();
-    }
-
-    @Override
-    public void commit() throws SQLException {
-        super.commit();
-    }
-
-    @Override
-    public void close() throws SQLException {
-        super.close();
-    }
-
-    @Override
-    public void rollback() throws SQLException {
-        super.rollback();
-    }
 }

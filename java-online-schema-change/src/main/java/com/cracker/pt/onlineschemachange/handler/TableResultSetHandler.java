@@ -90,24 +90,4 @@ public class TableResultSetHandler extends Handler {
         }
         return Optional.empty();
     }
-
-    @Override
-    public void begin() throws SQLException {
-        super.begin();
-    }
-
-    @Override
-    public void commit() throws SQLException {
-        super.commit();
-    }
-
-    @Override
-    public void close() throws SQLException {
-        super.close();
-    }
-
-    @Override
-    public void rollback() throws SQLException {
-        super.rollback();
-    }
 }

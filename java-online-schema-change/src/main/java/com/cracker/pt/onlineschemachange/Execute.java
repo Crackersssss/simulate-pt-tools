@@ -17,11 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
 
 /**
  * Online DDL Executor.
@@ -76,25 +72,14 @@ public final class Execute {
     private void dropTrigger(final ExecuteDatasource executeDatasource) {
         DataSource dataSource = executeDatasource.getDataSource();
         ExecuteContext context = executeDatasource.getContext();
-        try {
-            Statement statement = new TableSelectHandler(dataSource).getConnection().createStatement();
-
+        try (TableTriggerHandler triggerHandler = new TableTriggerHandler(dataSource)) {
             String tableName = context.getAlterStatement().getTableName();
-            String upTriggerName = String.format("trigger_%s_upd",tableName);
-            String delTriggerName = String.format("trigger_%s_del",tableName);
-            String insTriggerName = String.format("trigger_%s_ins",tableName);
-
-            String DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",upTriggerName);
-            statement.execute(DropTriggerSql);
-            DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",delTriggerName);
-            statement.execute(DropTriggerSql);
-            DropTriggerSql = String.format("DROP TRIGGER IF EXISTS %s",insTriggerName);
-            statement.execute(DropTriggerSql);
-
+            triggerHandler.dropTrigger(String.format("trigger_%s_upd", tableName));
+            triggerHandler.dropTrigger(String.format("trigger_%s_del", tableName));
+            triggerHandler.dropTrigger(String.format("trigger_%s_ins", tableName));
         } catch (SQLException e) {
-            throw new RuntimeException("delete trigger fail");
+            throw new OnlineDDLException("Delete trigger failed on initialization : %s", e.getMessage());
         }
-
     }
 
     public void executeCreate(final ExecuteDatasource executeDatasource) {
@@ -182,65 +167,31 @@ public final class Execute {
         }
     }
 
-    public static final String MAX_PKS = "maxPk";
-    public static final String MIN_PKS = "minPk";
     public void executeDataCopy(final ExecuteDatasource executeDatasource) {
-        TableDataHandler dataHandler = null;
-        TableSelectHandler selectHandler;
-        try {
-            DataSource dataSource = executeDatasource.getDataSource();
-            selectHandler = new TableSelectHandler(dataSource);
-            dataHandler = new TableDataHandler(dataSource);
+        DataSource dataSource = executeDatasource.getDataSource();
+        try (TableDataHandler dataHandler = new TableDataHandler(dataSource);
+             TableSelectHandler selectHandler = new TableSelectHandler(dataSource)) {
             ExecuteContext context = executeDatasource.getContext();
             selectHandler.setCopyMinIndex(context);
             selectHandler.setCopyMaxIndex(context);
             context.setCopyStartIndex(context.getCopyMinIndex());
-            List<String> primaryKey = context.getPrimaryKey();
-            StringJoiner primaryKeySJ = new StringJoiner(",");
-            for (String s : primaryKey) {
-                primaryKeySJ.add(s);
-            }
-            List<String> copyMaxIndex = context.getCopyMaxIndex();
-            List<String> copyMinIndex = context.getCopyMinIndex();
-            Map<String, List<String>> primaryKeyScopList = new HashMap<>();
-            primaryKeyScopList.put(MAX_PKS, copyMaxIndex);
-            primaryKeyScopList.put(MIN_PKS, copyMinIndex);
-            List<String> oldColumns = context.getOldColumns();
-            List<String> newColumns = context.getNewColumns();
-            String shardowTableName = context.getNewTableName();
-            String tableName = context.getAlterStatement().getTableName();
-            String database = dataSource.getDatabaseName();
-
-            selectHandler.cutToExe(primaryKeySJ.toString(), primaryKeyScopList, newColumns, oldColumns, shardowTableName,
-                    tableName, database);
+            dataHandler.copyData(context, dataSource.getDatabaseName());
         } catch (SQLException e) {
             throw new OnlineDDLException("An error occurred while copying data : %s", e.getMessage());
-        } finally {
-            try {
-                if (null != dataHandler) {
-                    dataHandler.close();
-                }
-            } catch (SQLException e) {
-                log.error("An error occurred while closing TableDataHandler : {}", e.getMessage());
-            }
         }
     }
 
     public void executeResultSet(final ExecuteDatasource executeDatasource) {
-        TableResultSetHandler resultSetHandler = null;
-        TableDropHandler dropHandler = null;
-        TableTriggerHandler triggerHandler = null;
-        try {
-            DataSource dataSource = executeDatasource.getDataSource();
-            resultSetHandler = new TableResultSetHandler(dataSource);
+        DataSource dataSource = executeDatasource.getDataSource();
+        try (TableResultSetHandler resultSetHandler = new TableResultSetHandler(dataSource);
+             TableDropHandler dropHandler = new TableDropHandler(dataSource);
+             TableTriggerHandler triggerHandler = new TableTriggerHandler(dataSource);) {
             resultSetHandler.begin();
             ExecuteContext context = executeDatasource.getContext();
             boolean comparison = resultSetHandler.resultSetComparison(context);
             if (!comparison) {
-                dropHandler = new TableDropHandler(dataSource);
                 String dropRecoverSQL = dropHandler.generateDropRecoverSQL(context);
                 dropHandler.deleteTable(dropRecoverSQL);
-                triggerHandler = new TableTriggerHandler(dataSource);
                 triggerHandler.dropAllTrigger(context);
                 resultSetHandler.commit();
                 throw new OnlineDDLException("If the result set is inconsistent, perform the operation again!");
@@ -250,20 +201,6 @@ public final class Execute {
             resultSetHandler.commit();
         } catch (SQLException e) {
             throw new OnlineDDLException("An error occurred while comparing result sets : %s", e.getMessage());
-        } finally {
-            try {
-                if (null != resultSetHandler) {
-                    resultSetHandler.close();
-                }
-                if (null != dropHandler) {
-                    dropHandler.close();
-                }
-                if (null != triggerHandler) {
-                    triggerHandler.close();
-                }
-            } catch (SQLException e) {
-                log.error("An error occurred while closing TableResultSetHandler or TableDropHandler or TableTriggerHandler : {}", e.getMessage());
-            }
         }
     }
 

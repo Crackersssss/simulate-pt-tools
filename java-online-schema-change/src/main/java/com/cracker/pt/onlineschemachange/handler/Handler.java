@@ -12,7 +12,7 @@ import java.sql.Statement;
 /**
  * Operating handler.
  */
-public abstract class Handler {
+public abstract class Handler implements AutoCloseable {
 
     @Getter
     private final HikariDataSource dataSource;
@@ -37,19 +37,19 @@ public abstract class Handler {
         return connection.createStatement();
     }
 
-    protected void begin() throws SQLException {
+    public void begin() throws SQLException {
         connection.setAutoCommit(false);
     }
 
-    protected void commit() throws SQLException {
+    public void commit() throws SQLException {
         connection.commit();
     }
 
-    protected void close() throws SQLException {
+    public void close() throws SQLException {
         connection.close();
     }
 
-    protected void rollback() throws SQLException {
+    public void rollback() throws SQLException {
         connection.rollback();
     }
 }

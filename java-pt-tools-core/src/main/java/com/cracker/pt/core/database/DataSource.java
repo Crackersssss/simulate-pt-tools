@@ -20,7 +20,7 @@ public final class DataSource {
         this.hikariDataSource = new HikariDataSource(config);
     }
 
-    public DataSource(final Config config, String databaseName) {
+    public DataSource(final Config config, final String databaseName) {
         this.dataSourceName = config.getDataSourceName();
         this.hikariDataSource = new HikariDataSource(config.getHikariConfig());
         this.databaseName = databaseName;
