@@ -6,6 +6,7 @@ import com.cracker.pt.onlineschemachange.exception.OnlineDDLException;
 import com.cracker.pt.onlineschemachange.statement.AlterStatement;
 import com.cracker.pt.onlineschemachange.utils.AlterType;
 import com.cracker.pt.onlineschemachange.utils.TriggerType;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.StringJoiner;
 /**
  * Table trigger operating handler.
  */
+@Slf4j
 public class TableTriggerHandler extends Handler {
 
     public TableTriggerHandler(final DataSource dataSource) throws SQLException {
@@ -40,9 +42,9 @@ public class TableTriggerHandler extends Handler {
         String newTableName = context.getNewTableName();
         String databaseName = getDatabaseName();
         //获取NEW字段
-        StringJoiner oldColumnStr = oldColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         StringJoiner newColumnStr = newColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         StringJoiner oldNewColumnStr = oldColumns.stream().reduce(new StringJoiner(", new.", "new.", ""), StringJoiner::add, (a, b) -> null);
+        StringJoiner oldOldColumnStr = oldColumns.stream().reduce(new StringJoiner(", old.", "old.", ""), StringJoiner::add, (a, b) -> null);
         List<String> primaryKeys = context.getPrimaryKeys();
         StringJoiner pkStr = primaryKeys.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         //获取OLD主键
@@ -58,7 +60,7 @@ public class TableTriggerHandler extends Handler {
                 sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_upd` AFTER UPDATE ON  %s.%s FOR EACH ROW BEGIN "
                                 + " DELETE FROM %s.%s WHERE (%s) = (%s); REPLACE INTO %s.%s (%s)" + "VALUES (%s);END",
                         databaseName, tableName, databaseName, tableName,
-                        databaseName, newTableName, pkStr, oldPKStr, databaseName, newTableName, newColumnStr, oldColumnStr);
+                        databaseName, newTableName, pkStr, oldPKStr, databaseName, newTableName, newColumnStr, oldOldColumnStr);
                 break;
             case INSERT:
                 sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_ins` AFTER INSERT ON %s.%s FOR EACH ROW REPLACE INTO %s.%s (%s) VALUES (%s)",

@@ -119,7 +119,7 @@ public final class Test {
         properties.setProperty(JDBCProps.PASSWORD.getPropName(), JDBCProps.PASSWORD.getDefaultValue());
         Config config = new Config("resource_0", properties);
 
-        String tableName3 = "pt_table1";
+        String tableName3 = "pt_table3";
         String alterType3 = "change";
         String columnName3 = "alter_column";
         String newColumnName3 = "bbb";
@@ -127,7 +127,7 @@ public final class Test {
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3, newColumnName3, columnType3);
         executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
-        String tableName4 = "pt_table2";
+        String tableName4 = "pt_table4";
         String alterType4 = "change";
         String columnName4 = "alter_column";
         String newColumnName4 = "bbb";
@@ -146,7 +146,7 @@ public final class Test {
         properties.setProperty(JDBCProps.PASSWORD.getPropName(), JDBCProps.PASSWORD.getDefaultValue());
         Config config = new Config("resource_0", properties);
 
-        String tableName3 = "pt_table1";
+        String tableName3 = "pt_table3";
         String alterType3 = "change";
         String columnName3 = "bbb";
         String newColumnName3 = "alter_column";
@@ -154,7 +154,7 @@ public final class Test {
         ArrayList<ExecuteDatasource> executeDatasource = new ArrayList<>();
         AlterStatement alterStatement1 = new AlterStatement(tableName3, alterType3, columnName3, newColumnName3, columnType3);
         executeDatasource.add(new ExecuteDatasource(alterStatement1, new DataSource(config, "pt_db")));
-        String tableName4 = "pt_table2";
+        String tableName4 = "pt_table4";
         String alterType4 = "change";
         String columnName4 = "bbb";
         String newColumnName4 = "alter_column";
@@ -168,12 +168,12 @@ public final class Test {
     public static void main(final String[] args) throws InterruptedException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         log.info("start = {}", df.format(System.currentTimeMillis()));
-        testShardingTable1();
-//        testShardingTable3();
+//        testShardingTable1();
+        testShardingTable3();
         log.info("end = {}", df.format(System.currentTimeMillis()));
         log.info("start = {}", df.format(System.currentTimeMillis()));
-        testShardingTable2();
-//        testShardingTable4();
+//        testShardingTable2();
+        testShardingTable4();
         log.info("end = {}", df.format(System.currentTimeMillis()));
     }
 }

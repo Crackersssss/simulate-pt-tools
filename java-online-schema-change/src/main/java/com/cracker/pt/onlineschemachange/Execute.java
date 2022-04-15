@@ -50,10 +50,17 @@ public final class Execute {
             executeTrigger(each);
             executeDataCopy(each);
             executeResultSet(each);
-        }).addCallback(data -> log.info("success,result = {}", data), ex -> log.info("**exception message**：{}, {}", ex.getMessage(), ex.getCause())));
+        }).addCallback(data -> log.info("success,result = {}", data), ex -> {
+            log.info("**exception message**：{}", ex.getMessage());
+            ex.printStackTrace();
+        }));
         taskExecutor.shutdown();
+        int mark = 0;
         while (taskExecutor.getActiveCount() > 0) {
-            //log.info("Modify, please wait for......");
+            mark = 1;
+        }
+        if (mark == 1) {
+            log.info("Modify, please wait for......");
         }
         executeDatasourceList.forEach(each -> {
             if (!each.getContext().isSuccess()) {
