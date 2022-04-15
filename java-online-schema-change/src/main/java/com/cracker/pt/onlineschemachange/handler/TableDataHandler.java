@@ -82,7 +82,7 @@ public class TableDataHandler extends Handler {
             return;
         }
         //查询切割10000条
-        while (StringUtils.compareTo(String.join("", localMinPkList), String.join("", localMaxPkList)) < 0) {
+        while (computeEnd(localMinPkList, localMaxPkList) < 0) {
             //前置查询
             String searchSql = makeSearchSql(primaryKeyStr, localMinPkList, localMaxPkList, database, tableName);
             //执行查询获得之后第10001条主键值
@@ -101,6 +101,17 @@ public class TableDataHandler extends Handler {
             getStatement().execute(insertSql);
             localMinPkList = pkList;
         }
+    }
+
+    private int computeEnd(List<String> localMinPkList, List<String> localMaxPkList) {
+        int compare = 0;
+        for (int i = 0; i < localMinPkList.size(); i++) {
+            compare = StringUtils.compareTo(localMinPkList.get(i), localMaxPkList.get(i));
+            if (compare != 0) {
+                return compare;
+            }
+        }
+        return compare;
     }
 
     private Integer countTableLine(final String database, final String tableName) throws SQLException {
