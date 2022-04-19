@@ -32,7 +32,7 @@ public class Test2 {
         Config resource2 = new Config("resource_1", properties2);
         configs.add(resource2);
         List<DataSource> dataSources = new ArrayList<>();
-        configs.forEach(each -> dataSources.add(new DataSource(each.getDataSourceName(), each.getHikariConfig())));
+        configs.forEach(each -> dataSources.add(new DataSource(resource2, "pt_db")));
         List<Table> tables = QueryTables.queryData(dataSources);
         Map<String, List<String>> data = QueryColumns.queryData(dataSources, tables);
         Map<String, Boolean> result = Compute.isEqual(data);

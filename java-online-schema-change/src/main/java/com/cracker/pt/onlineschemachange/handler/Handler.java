@@ -12,15 +12,13 @@ import java.sql.Statement;
 /**
  * Operating handler.
  */
+@Getter
 public abstract class Handler implements AutoCloseable {
 
-    @Getter
     private final HikariDataSource dataSource;
 
-    @Getter
     private final String databaseName;
 
-    @Getter
     @Setter
     private Connection connection;
 

@@ -25,18 +25,34 @@ public class TableDataHandler extends Handler {
         isFirst = false;
     }
 
-    @SuppressWarnings("unused")
+    /**
+     * Repeat function with other methods.
+     * @deprecated  repeat function with other methods.
+     * @param context execute context
+     * @return copy sql
+     */
+    @Deprecated
     public String generateCopySQL(final ExecuteContext context) {
         List<String> oldColumns = context.getOldColumns();
         List<String> newColumns = context.getNewColumns();
         return getCopySQL(oldColumns, newColumns, context);
     }
 
+    /**
+     * Repeat function with other methods.
+     * @deprecated  repeat function with other methods.
+     */
+    @Deprecated
     private String getCopySQL(final List<String> oldColumns, final List<String> newColumns, final ExecuteContext context) {
         String selectSQL = getSelectSQL(oldColumns, context);
         return getSubCopySQL(newColumns, selectSQL, context);
     }
 
+    /**
+     * Repeat function with other methods.
+     * @deprecated  repeat function with other methods.
+     */
+    @Deprecated
     private String getSelectSQL(final List<String> columns, final ExecuteContext context) {
         String tableName = context.getAlterStatement().getTableName();
         List<String> primaryKey = context.getPrimaryKeys();
@@ -47,6 +63,11 @@ public class TableDataHandler extends Handler {
                 columnNames, tableName, primaryKey, copyStartIndex, primaryKey, copyEndIndex);
     }
 
+    /**
+     * Repeat function with other methods.
+     * @deprecated  repeat function with other methods.
+     */
+    @Deprecated
     private String getSubCopySQL(final List<String> columns, final String selectSQL, final ExecuteContext context) {
         String newTableName = context.getNewTableName();
         String columnNames = columns.stream().reduce((a, b) -> a + ", " + b).orElseThrow(() -> new RuntimeException("unknown error"));

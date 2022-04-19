@@ -14,6 +14,11 @@ public final class DataSource {
 
     private final HikariDataSource hikariDataSource;
 
+    /**
+     * Repeat with the constructor below.
+     * @deprecated  repeat with the constructor below.
+     */
+    @Deprecated
     public DataSource(final String dataSourceName, final HikariConfig config, final String databaseName) {
         this.dataSourceName = dataSourceName;
         this.databaseName = databaseName;

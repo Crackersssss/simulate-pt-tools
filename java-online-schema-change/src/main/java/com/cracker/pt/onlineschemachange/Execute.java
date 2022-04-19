@@ -89,7 +89,7 @@ public final class Execute {
         }
     }
 
-    public void executeCreate(final ExecuteDatasource executeDatasource) {
+    private void executeCreate(final ExecuteDatasource executeDatasource) {
         TableCreateHandler createHandler = null;
         try {
             createHandler = new TableCreateHandler(executeDatasource.getDataSource());
@@ -117,7 +117,7 @@ public final class Execute {
         }
     }
 
-    public void executeAlter(final ExecuteDatasource executeDatasource) {
+    private void executeAlter(final ExecuteDatasource executeDatasource) {
         TableAlterHandler alterHandler = null;
         try {
             alterHandler = new TableAlterHandler(executeDatasource.getDataSource());
@@ -145,7 +145,7 @@ public final class Execute {
         }
     }
 
-    public void executeTrigger(final ExecuteDatasource executeDatasource) {
+    private void executeTrigger(final ExecuteDatasource executeDatasource) {
         TableColumnsHandler columnsHandler;
         TableTriggerHandler triggerHandler = null;
         try {
@@ -174,7 +174,7 @@ public final class Execute {
         }
     }
 
-    public void executeDataCopy(final ExecuteDatasource executeDatasource) {
+    private void executeDataCopy(final ExecuteDatasource executeDatasource) {
         DataSource dataSource = executeDatasource.getDataSource();
         try (TableDataHandler dataHandler = new TableDataHandler(dataSource);
              TableSelectHandler selectHandler = new TableSelectHandler(dataSource)) {
@@ -188,7 +188,7 @@ public final class Execute {
         }
     }
 
-    public void executeResultSet(final ExecuteDatasource executeDatasource) {
+    private void executeResultSet(final ExecuteDatasource executeDatasource) {
         DataSource dataSource = executeDatasource.getDataSource();
         try (TableResultSetHandler resultSetHandler = new TableResultSetHandler(dataSource);
              TableDropHandler dropHandler = new TableDropHandler(dataSource);
@@ -211,7 +211,7 @@ public final class Execute {
         }
     }
 
-    public void executeRename(final ExecuteDatasource executeDatasource) {
+    private void executeRename(final ExecuteDatasource executeDatasource) {
         TableRenameHandler renameHandler = null;
         try {
             renameHandler = new TableRenameHandler(executeDatasource.getDataSource());
@@ -241,7 +241,7 @@ public final class Execute {
         }
     }
 
-    public void executeDrop(final ExecuteDatasource executeDatasource) {
+    private void executeDrop(final ExecuteDatasource executeDatasource) {
         TableDropHandler dropHandler = null;
         try {
             dropHandler = new TableDropHandler(executeDatasource.getDataSource());

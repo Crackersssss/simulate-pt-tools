@@ -30,24 +30,4 @@ public class TableRenameHandler extends Handler {
         String tableName = context.getAlterStatement().getTableName();
         context.setRenameOldTableName(tableName + RENAME_OLD_TABLE_END);
     }
-
-    @Override
-    public void begin() throws SQLException {
-        super.begin();
-    }
-
-    @Override
-    public void commit() throws SQLException {
-        super.commit();
-    }
-
-    @Override
-    public void close() throws SQLException {
-        super.close();
-    }
-
-    @Override
-    public void rollback() throws SQLException {
-        super.rollback();
-    }
 }
