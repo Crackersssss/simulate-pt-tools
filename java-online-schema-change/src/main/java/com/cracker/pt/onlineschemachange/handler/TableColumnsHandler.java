@@ -24,8 +24,10 @@ public class TableColumnsHandler extends Handler {
     }
 
     public void setPrimaryKeys(final ExecuteContext context) throws SQLException {
-        ResultSet resultSet = getConnection().getMetaData().getPrimaryKeys(null, null, context.getNewTableName());
+        String sql = String.format("select * from information_schema.`COLUMNS` where table_schema = '%s' and table_name = '%s' AND COLUMN_KEY='PRI';",
+                getDatabaseName(), context.getAlterStatement().getTableName());
         List<String> primaryKeys = new ArrayList<>();
+        ResultSet resultSet = getStatement().executeQuery(sql);
         while (resultSet.next()) {
             primaryKeys.add(resultSet.getString(COLUMN_NAME));
         }
