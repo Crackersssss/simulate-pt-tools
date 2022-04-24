@@ -190,16 +190,11 @@ public final class Execute {
 
     private void executeResultSet(final ExecuteDatasource executeDatasource) {
         DataSource dataSource = executeDatasource.getDataSource();
-        try (TableResultSetHandler resultSetHandler = new TableResultSetHandler(dataSource);
-             TableDropHandler dropHandler = new TableDropHandler(dataSource);
-             TableTriggerHandler triggerHandler = new TableTriggerHandler(dataSource);) {
+        try (TableResultSetHandler resultSetHandler = new TableResultSetHandler(dataSource)) {
             resultSetHandler.begin();
             ExecuteContext context = executeDatasource.getContext();
             boolean comparison = resultSetHandler.resultSetComparison(context);
             if (!comparison) {
-                String dropRecoverSQL = dropHandler.generateDropRecoverSQL(context);
-                dropHandler.deleteTable(dropRecoverSQL);
-                triggerHandler.dropAllTrigger(context);
                 resultSetHandler.commit();
                 throw new OnlineDDLException("If the result set is inconsistent, perform the operation again!");
             }

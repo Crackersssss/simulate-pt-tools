@@ -43,6 +43,7 @@ public class TableTriggerHandler extends Handler {
         String databaseName = getDatabaseName();
         //获取NEW字段
         StringJoiner newColumnStr = newColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
+        StringJoiner oldColumnStr = oldColumns.stream().reduce(new StringJoiner(", "), StringJoiner::add, (a, b) -> null);
         StringJoiner oldNewColumnStr = oldColumns.stream().reduce(new StringJoiner(", new.", "new.", ""), StringJoiner::add, (a, b) -> null);
         StringJoiner oldOldColumnStr = oldColumns.stream().reduce(new StringJoiner(", old.", "old.", ""), StringJoiner::add, (a, b) -> null);
         List<String> primaryKeys = context.getPrimaryKeys();
@@ -58,9 +59,9 @@ public class TableTriggerHandler extends Handler {
                 break;
             case UPDATE:
                 sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_upd` AFTER UPDATE ON  %s.%s FOR EACH ROW BEGIN "
-                                + " DELETE FROM %s.%s WHERE (%s) = (%s); REPLACE INTO %s.%s (%s)" + "VALUES (%s);END",
+                                + " DELETE FROM %s.%s WHERE (%s) = (%s); REPLACE INTO %s.%s (%s) (select %s from %s where %s = %s);END",
                         databaseName, tableName, databaseName, tableName,
-                        databaseName, newTableName, pkStr, oldPKStr, databaseName, newTableName, newColumnStr, oldOldColumnStr);
+                        databaseName, newTableName, pkStr, oldPKStr, databaseName, newTableName, newColumnStr, oldColumnStr, tableName, pkStr, oldPKStr);
                 break;
             case INSERT:
                 sql = String.format("CREATE TRIGGER `%s`.`trigger_%s_ins` AFTER INSERT ON %s.%s FOR EACH ROW REPLACE INTO %s.%s (%s) VALUES (%s)",
