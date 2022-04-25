@@ -191,16 +191,12 @@ public final class Execute {
     private void executeResultSet(final ExecuteDatasource executeDatasource) {
         DataSource dataSource = executeDatasource.getDataSource();
         try (TableResultSetHandler resultSetHandler = new TableResultSetHandler(dataSource)) {
-            resultSetHandler.begin();
             ExecuteContext context = executeDatasource.getContext();
-            boolean comparison = resultSetHandler.resultSetComparison(context);
-            if (!comparison) {
-                resultSetHandler.commit();
+            if (!resultSetHandler.resultSetComparison(context)) {
                 throw new OnlineDDLException("If the result set is inconsistent, perform the operation again!");
             }
             log.info("Consistent result set.");
             context.setSuccess(true);
-            resultSetHandler.commit();
         } catch (SQLException e) {
             throw new OnlineDDLException("An error occurred while comparing result sets : %s", e.getMessage());
         }
